@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluence Admin — Manage Deals, Brands & Creators</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script>
+  // ================================================================
+  // FLUENCE ADMIN CONFIG
+  // Paste your Apps Script Web App URL and your admin secret here.
+  // Both values come from backend/google-apps-script.gs after deploy.
+  // ================================================================
+  window.FLUENCE_ADMIN = {
+    API_URL: "",                                   // e.g. https://script.google.com/macros/s/AKfy.../exec
+    ADMIN_SECRET: "fluence_admin_2026_change_me"   // must match ADMIN_SECRET in the Apps Script
+  };
+</script>
+<style>
+  :root{
+    --bg:#FAFAF9; --surface:#FFFFFF; --surface-2:#F5F5F4;
+    --border:#E7E5E4; --border-2:#D6D3D1;
+    --ink:#1C1917; --ink-2:#44403C; --ink-3:#78716C;
+    --flame:#E8553A; --flame-2:#C2410C; --flame-soft:#FFF1EC;
+    --ok:#15803D; --ok-soft:#DCFCE7;
+    --warn:#B45309; --warn-soft:#FEF3C7;
+    --err:#B91C1C; --err-soft:#FEE2E2;
+    --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px;
+    --sh-sm:0 1px 2px rgba(28,25,23,.06);
+    --sh-md:0 4px 16px rgba(28,25,23,.08);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-feature-settings:"ss01","cv11"}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,textarea,select{font-family:inherit;color:inherit}
+  a{color:var(--flame);text-decoration:none}
+
+  .layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+  .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:24px 16px;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+  .brand-name{font-weight:800;font-size:18px;letter-spacing:-.3px}
+  .brand-tag{font-size:10px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .nav-section{margin-top:8px;font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.6px;padding:8px 10px 4px}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--r-md);font-weight:500;font-size:14px;color:var(--ink-2);cursor:pointer;margin-bottom:2px;transition:all .15s}
+  .nav-item:hover{background:var(--surface-2);color:var(--ink)}
+  .nav-item.active{background:var(--flame-soft);color:var(--flame-2);font-weight:600}
+  .nav-item .dot{margin-left:auto;background:var(--flame);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;min-width:18px;text-align:center}
+
+  .main{padding:32px 40px;max-width:1280px;width:100%}
+  .page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+  .page-title{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .page-sub{color:var(--ink-3);font-size:14px;margin-top:4px}
+
+  .conn{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid var(--border)}
+  .conn.on{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+  .conn.off{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+  .pulse{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(21,128,61,.5)}70%{box-shadow:0 0 0 8px rgba(21,128,61,0)}100%{box-shadow:0 0 0 0 rgba(21,128,61,0)}}
+
+  .setup-banner{background:linear-gradient(135deg,#FEF3C7,#FFF1EC);border:1px solid var(--warn-soft);border-radius:var(--r-lg);padding:20px 24px;margin-bottom:24px;display:flex;gap:16px;align-items:flex-start}
+  .setup-banner h3{font-size:15px;font-weight:700;margin-bottom:4px}
+  .setup-banner p{font-size:13px;color:var(--ink-2);line-height:1.6}
+  .setup-banner code{background:#fff;padding:2px 6px;border-radius:6px;font-size:12px;border:1px solid var(--border)}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px}
+  .stat-label{font-size:12px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+  .stat-val{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .stat-sub{font-size:12px;color:var(--ink-3);margin-top:4px}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;margin-bottom:16px}
+  .card h3{font-size:16px;font-weight:700;margin-bottom:4px}
+  .card .hint{font-size:13px;color:var(--ink-3);margin-bottom:16px}
+
+  .grid{display:grid;gap:12px}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field label{font-size:12px;font-weight:600;color:var(--ink-2)}
+  .field .help{font-size:11px;color:var(--ink-3)}
+  .inp,.ta,.sel{background:var(--surface);border:1px solid var(--border-2);border-radius:var(--r-md);padding:10px 14px;font-size:14px;width:100%;transition:border-color .15s,box-shadow .15s}
+  .inp:focus,.ta:focus,.sel:focus{outline:none;border-color:var(--flame);box-shadow:0 0 0 3px var(--flame-soft)}
+  .ta{min-height:80px;resize:vertical;font-family:inherit}
+  .sel{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2378716C' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:var(--r-md);font-weight:600;font-size:14px;transition:all .15s;border:1px solid transparent}
+  .btn-primary{background:var(--ink);color:#fff}
+  .btn-primary:hover{background:var(--ink-2)}
+  .btn-flame{background:var(--flame);color:#fff}
+  .btn-flame:hover{background:var(--flame-2)}
+  .btn-ghost{background:var(--surface);border-color:var(--border-2);color:var(--ink-2)}
+  .btn-ghost:hover{background:var(--surface-2)}
+  .btn-ok{background:var(--ok);color:#fff}
+  .btn-ok:hover{filter:brightness(.92)}
+  .btn-err{background:var(--err-soft);color:var(--err)}
+  .btn-err:hover{background:#fecaca}
+  .btn-sm{padding:6px 12px;font-size:12px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  .badge-picker{display:flex;gap:8px;flex-wrap:wrap}
+  .badge-opt{padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid var(--border-2);background:var(--surface);cursor:pointer}
+  .badge-opt.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;border-bottom:1px solid var(--border)}
+  td{padding:14px 12px;font-size:14px;border-bottom:1px solid var(--border-2);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--surface-2)}
+
+  .status-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+  .status-pill.active{background:var(--ok-soft);color:var(--ok)}
+  .status-pill.paused{background:var(--warn-soft);color:var(--warn)}
+  .status-pill.pending{background:var(--warn-soft);color:var(--warn)}
+  .status-pill.approved{background:var(--ok-soft);color:var(--ok)}
+  .status-pill.rejected{background:var(--err-soft);color:var(--err)}
+
+  .empty{text-align:center;padding:48px 16px;color:var(--ink-3)}
+  .empty-title{font-weight:700;color:var(--ink);font-size:16px;margin-bottom:6px}
+  .empty-sub{font-size:14px}
+
+  .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--flame);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .toasts{position:fixed;top:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999}
+  .toast{background:var(--ink);color:#fff;padding:12px 18px;border-radius:var(--r-md);font-size:13px;font-weight:500;box-shadow:var(--sh-md);max-width:360px;animation:slideIn .2s ease}
+  .toast.ok{background:var(--ok)}
+  .toast.err{background:var(--err)}
+  .toast.warn{background:var(--warn)}
+  @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+  .row-actions{display:flex;gap:6px}
+  .kbd{background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:1px 6px;font-size:11px;font-family:monospace}
+
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr}
+    .sidebar{position:static;height:auto}
+    .main{padding:20px}
+    .stats{grid-template-columns:1fr 1fr}
+    .grid-2,.grid-3{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useRef } = React;
+
+function LogoMark({ size=36 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 56 56" style={{display:'block'}}>
+      <defs>
+        <linearGradient id="fl" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#FF7A4A"/>
+          <stop offset="100%" stopColor="#C2410C"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="56" height="56" rx="14" fill="url(#fl)"/>
+      <path d="M28 12 C32 20, 40 22, 38 32 C37 40, 30 44, 28 44 C26 44, 19 40, 18 32 C16 22, 24 20, 28 12 Z"
+            fill="#fff" opacity="0.95"/>
+      <circle cx="28" cy="34" r="4" fill="#FFD7B5"/>
+    </svg>
+  );
+}
+
+const CFG = () => window.FLUENCE_ADMIN || {};
+const API = {
+  url: () => CFG().API_URL || "",
+  secret: () => CFG().ADMIN_SECRET || "",
+  configured: () => !!(CFG().API_URL),
+  async ping() {
+    if (!this.configured()) return { ok:false, reason:"not_configured" };
+    try {
+      const r = await fetch(this.url() + "?type=ping");
+      return await r.json();
+    } catch(e) { return { ok:false, reason:"network" }; }
+  },
+  async getDeals() {
+    if (!this.configured()) return { ok:false, deals:[] };
+    try { const r = await fetch(this.url() + "?type=deals"); return await r.json(); }
+    catch(e){ return { ok:false, deals:[] }; }
+  },
+  async getBrands() {
+    if (!this.configured()) return { ok:false, brands:[] };
+    try { const r = await fetch(this.url() + "?type=brands&secret=" + encodeURIComponent(this.secret())); return await r.json(); }
+    catch(e){ return { ok:false, brands:[] }; }
+  },
+  async getCreators() {
+    if (!this.configured()) return { ok:false, creators:[] };
+    try { const r = await fetch(this.url() + "?type=creators&secret=" + encodeURIComponent(this.secret())); return await r.json(); }
+    catch(e){ return { ok:false, creators:[] }; }
+  },
+  async post(action, data) {
+    if (!this.configured()) return { ok:false, reason:"not_configured" };
+    try {
+      const body = JSON.stringify({ action, secret: this.secret(), ...data });
+      const r = await fetch(this.url(), { method:"POST", body, headers:{"Content-Type":"text/plain"} });
+      return await r.json();
+    } catch(e){ return { ok:false, reason:"network" }; }
+  },
+  createDeal(deal)            { return this.post("create_deal", { deal }); },
+  updateDealStatus(id, status){ return this.post("update_deal_status", { id, status }); },
+  reviewBrand(id, status)     { return this.post("review_brand", { id, status }); }
+};
+
+function Toasts({ list }) {
+  return (
+    <div className="toasts">
+      {list.map(t => <div key={t.id} className={"toast " + (t.kind||"")}>{t.msg}</div>)}
+    </div>
+  );
+}
+
+const NAV = [
+  { key:"dash",    label:"Dashboard"         },
+  { key:"post",    label:"Post new deal"     },
+  { key:"deals",   label:"Manage deals"      },
+  { key:"brands",  label:"Brand applications"},
+  { key:"creators",label:"Creators"          },
+  { key:"setup",   label:"Setup & Settings"  }
+];
+
+function Sidebar({ page, setPage, counts }) {
+  return (
+    <aside className="sidebar">
+      <div className="brand">
+        <LogoMark size={36}/>
+        <div>
+          <div className="brand-name">Fluence</div>
+          <div className="brand-tag">Admin · Gwalior</div>
+        </div>
+      </div>
+      <div className="nav-section">Workspace</div>
+      {NAV.map(n => (
+        <div key={n.key} className={"nav-item " + (page===n.key?"active":"")} onClick={()=>setPage(n.key)}>
+          <span>{n.label}</span>
+          {n.key==="brands" && counts.pendingBrands > 0 && <span className="dot">{counts.pendingBrands}</span>}
+          {n.key==="deals"  && counts.activeDeals   > 0 && <span className="dot">{counts.activeDeals}</span>}
+        </div>
+      ))}
+      <div style={{marginTop:24,padding:"12px 14px",background:"var(--surface-2)",borderRadius:"var(--r-md)",fontSize:12,color:"var(--ink-3)",lineHeight:1.5}}>
+        <b style={{color:"var(--ink-2)"}}>Need help?</b><br/>
+        Open <b>Setup & Settings</b> for the full step-by-step connect guide.
+      </div>
+    </aside>
+  );
+}
+
+function Dashboard({ deals, brands, creators, setPage }) {
+  const active  = deals.filter(d => (d.status||"active") === "active").length;
+  const pending = brands.filter(b => (b.status||"pending") === "pending").length;
+  return (
+    <>
+      <div className="stats">
+        <div className="stat">
+          <div className="stat-label">Active deals</div>
+          <div className="stat-val">{active}</div>
+          <div className="stat-sub">Live on the creator app</div>
+        </div>
+        <div className="stat">
+          <div className="stat-label">Total deals</div>
+          <div className="stat-val">{deals.length}</div>
+          <div className="stat-sub">Active + paused + draft</div>
+        </div>
+        <div className="stat">
+          <div className="stat-label">Brand applications</div>
+          <div className="stat-val">{pending}</div>
+          <div className="stat-sub">Pending your review</div>
+        </div>
+        <div className="stat">
+          <div className="stat-label">Registered creators</div>
+          <div className="stat-val">{creators.length}</div>
+          <div className="stat-sub">Signed up through OTP</div>
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>Quick actions</h3>
+        <div className="hint">Everything you need to run Fluence Gwalior in one place.</div>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+          <button className="btn btn-flame" onClick={()=>setPage("post")}>+ Post new deal</button>
+          <button className="btn btn-ghost" onClick={()=>setPage("brands")}>Review brand applications</button>
+          <button className="btn btn-ghost" onClick={()=>setPage("deals")}>Manage existing deals</button>
+          <button className="btn btn-ghost" onClick={()=>setPage("setup")}>Connect / re-connect backend</button>
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>Recent deals</h3>
+        <div className="hint">Latest 5 deals you've posted.</div>
+        {deals.length === 0 ? (
+          <div className="empty">
+            <div className="empty-title">No deals yet</div>
+            <div className="empty-sub">Head to <b>Post new deal</b> to add your first one.</div>
+          </div>
+        ) : (
+          <table>
+            <thead><tr><th>Brand</th><th>Deal</th><th>Value</th><th>Status</th></tr></thead>
+            <tbody>
+              {deals.slice(0,5).map(d => (
+                <tr key={d.id}>
+                  <td><b>{d.brand}</b></td>
+                  <td>{d.title}</td>
+                  <td>₹{d.value || d.payout || "—"}</td>
+                  <td><span className={"status-pill " + (d.status||"active")}>{d.status||"active"}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
+  );
+}
+
+const BADGES = ["new","hot","closing","fresh"];
+const CATEGORIES = ["Food & Cafe","Fashion","Beauty & Salon","Fitness & Gym","Events","Electronics","Services","Education","Home","Other"];
+
+function PostDeal({ onPosted, toast }) {
+  const [f, setF] = useState({
+    brand:"", title:"", category:"Food & Cafe",
+    value:"", payout_type:"Cash + Product",
+    followers_min:"1000", niche:"Food, Lifestyle",
+    location:"Gwalior", deliverables:"1 Reel + 3 Stories",
+    deadline:"", slots:"3", badge:"new",
+    description:"", contact:""
+  });
+  const [busy, setBusy] = useState(false);
+  const set = (k,v) => setF(s=>({...s,[k]:v}));
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!f.brand || !f.title) { toast("Brand and deal title are required","err"); return; }
+    if (!API.configured()) { toast("Connect backend first (see Setup & Settings)","warn"); return; }
+    setBusy(true);
+    const res = await API.createDeal(f);
+    setBusy(false);
+    if (res.ok) {
+      toast("Deal posted · live on creator app","ok");
+      setF({ ...f, brand:"", title:"", value:"", deliverables:"1 Reel + 3 Stories", deadline:"", slots:"3", description:"", contact:"" });
+      onPosted && onPosted();
+    } else {
+      toast("Could not post deal: " + (res.reason || "unknown"),"err");
+    }
+  }
+
+  return (
+    <form className="card" onSubmit={submit}>
+      <h3>Post a new deal</h3>
+      <div className="hint">Fill in the details below. As soon as you submit, the deal appears live on the creator app.</div>
+
+      <div className="grid grid-2">
+        <div className="field">
+          <label>Brand name *</label>
+          <input className="inp" value={f.brand} onChange={e=>set("brand",e.target.value)} placeholder="e.g. Cafe Coffee Day, MR Cake"/>
+        </div>
+        <div className="field">
+          <label>Deal title *</label>
+          <input className="inp" value={f.title} onChange={e=>set("title",e.target.value)} placeholder="e.g. New menu launch — Reel collab"/>
+        </div>
+        <div className="field">
+          <label>Category</label>
+          <select className="sel" value={f.category} onChange={e=>set("category",e.target.value)}>
+            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label>Location</label>
+          <input className="inp" value={f.location} onChange={e=>set("location",e.target.value)}/>
+        </div>
+        <div className="field">
+          <label>Value (₹)</label>
+          <input className="inp" type="number" value={f.value} onChange={e=>set("value",e.target.value)} placeholder="2500"/>
+          <div className="help">What the creator earns (cash equivalent)</div>
+        </div>
+        <div className="field">
+          <label>Payout type</label>
+          <select className="sel" value={f.payout_type} onChange={e=>set("payout_type",e.target.value)}>
+            <option>Cash</option><option>Product only</option><option>Cash + Product</option><option>Voucher / Credit</option>
+          </select>
+        </div>
+        <div className="field">
+          <label>Min followers</label>
+          <input className="inp" type="number" value={f.followers_min} onChange={e=>set("followers_min",e.target.value)}/>
+        </div>
+        <div className="field">
+          <label>Open slots</label>
+          <input className="inp" type="number" value={f.slots} onChange={e=>set("slots",e.target.value)}/>
+        </div>
+        <div className="field">
+          <label>Niche tags</label>
+          <input className="inp" value={f.niche} onChange={e=>set("niche",e.target.value)} placeholder="Food, Lifestyle"/>
+        </div>
+        <div className="field">
+          <label>Deadline</label>
+          <input className="inp" type="date" value={f.deadline} onChange={e=>set("deadline",e.target.value)}/>
+        </div>
+      </div>
+
+      <div className="field" style={{marginTop:12}}>
+        <label>Deliverables</label>
+        <input className="inp" value={f.deliverables} onChange={e=>set("deliverables",e.target.value)} placeholder="1 Reel + 3 Stories + 1 Post"/>
+      </div>
+
+      <div className="field" style={{marginTop:12}}>
+        <label>Description</label>
+        <textarea className="ta" value={f.description} onChange={e=>set("description",e.target.value)} placeholder="What does the brand want? Visit store, try menu, tag handle, etc."/>
+      </div>
+
+      <div className="field" style={{marginTop:12}}>
+        <label>Brand contact (phone/WhatsApp)</label>
+        <input className="inp" value={f.contact} onChange={e=>set("contact",e.target.value)} placeholder="+91 98xxxxxxxx"/>
+      </div>
+
+      <div className="field" style={{marginTop:12}}>
+        <label>Badge</label>
+        <div className="badge-picker">
+          {BADGES.map(b => (
+            <div key={b} className={"badge-opt " + (f.badge===b?"sel":"")} onClick={()=>set("badge",b)}>{b}</div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{display:'flex',gap:10,marginTop:20}}>
+        <button className="btn btn-flame" type="submit" disabled={busy}>
+          {busy ? <span className="spinner"/> : null}
+          {busy ? "Posting…" : "Post deal live"}
+        </button>
+        <button className="btn btn-ghost" type="button" onClick={()=>setF({...f,brand:"",title:"",value:"",description:"",contact:""})}>Reset</button>
+      </div>
+    </form>
+  );
+}
+
+function ManageDeals({ deals, reload, toast }) {
+  const [busy, setBusy] = useState("");
+  async function toggle(d) {
+    setBusy(d.id);
+    const next = (d.status||"active") === "active" ? "paused" : "active";
+    const res = await API.updateDealStatus(d.id, next);
+    setBusy("");
+    if (res.ok) { toast("Deal " + next, "ok"); reload(); }
+    else toast("Update failed","err");
+  }
+  return (
+    <div className="card">
+      <h3>All deals ({deals.length})</h3>
+      <div className="hint">Pause a deal to hide it from creators without deleting it.</div>
+      {deals.length === 0 ? (
+        <div className="empty">
+          <div className="empty-title">No deals posted yet</div>
+          <div className="empty-sub">Post your first deal from the <b>Post new deal</b> tab.</div>
+        </div>
+      ) : (
+        <table>
+          <thead><tr><th>Brand</th><th>Title</th><th>Category</th><th>Value</th><th>Slots</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {deals.map(d => (
+              <tr key={d.id}>
+                <td><b>{d.brand}</b></td>
+                <td>{d.title}</td>
+                <td>{d.category}</td>
+                <td>₹{d.value || "—"}</td>
+                <td>{d.slots || "—"}</td>
+                <td><span className={"status-pill " + (d.status||"active")}>{d.status||"active"}</span></td>
+                <td>
+                  <button className="btn btn-sm btn-ghost" onClick={()=>toggle(d)} disabled={busy===d.id}>
+                    {busy===d.id ? <span className="spinner"/> : ((d.status||"active")==="active" ? "Pause" : "Activate")}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function Brands({ brands, reload, toast }) {
+  const [busy, setBusy] = useState("");
+  async function act(b, status) {
+    setBusy(b.id + status);
+    const res = await API.reviewBrand(b.id, status);
+    setBusy("");
+    if (res.ok) { toast("Brand " + status, "ok"); reload(); }
+    else toast("Update failed","err");
+  }
+  const pending  = brands.filter(b => (b.status||"pending") === "pending");
+  const reviewed = brands.filter(b => (b.status||"pending") !== "pending");
+
+  return (
+    <>
+      <div className="card">
+        <h3>Pending review ({pending.length})</h3>
+        <div className="hint">Brands that applied via your Google Form. Approve to add to your brand roster.</div>
+        {pending.length === 0 ? (
+          <div className="empty">
+            <div className="empty-title">Nothing pending</div>
+            <div className="empty-sub">New brand applications from your Google Form will show up here automatically.</div>
+          </div>
+        ) : (
+          <table>
+            <thead><tr><th>Brand</th><th>Contact</th><th>Category</th><th>Budget</th><th>Received</th><th></th></tr></thead>
+            <tbody>
+              {pending.map(b => (
+                <tr key={b.id}>
+                  <td><b>{b.brand_name||b.name||"—"}</b><br/><span style={{color:'var(--ink-3)',fontSize:12}}>{b.email||""}</span></td>
+                  <td>{b.phone||"—"}</td>
+                  <td>{b.category||"—"}</td>
+                  <td>{b.budget ? "₹"+b.budget : "—"}</td>
+                  <td style={{color:'var(--ink-3)',fontSize:12}}>{b.created_at ? new Date(b.created_at).toLocaleDateString() : "—"}</td>
+                  <td>
+                    <div className="row-actions">
+                      <button className="btn btn-sm btn-ok"  disabled={busy===b.id+"approved"} onClick={()=>act(b,"approved")}>{busy===b.id+"approved"?<span className="spinner"/>:"Approve"}</button>
+                      <button className="btn btn-sm btn-err" disabled={busy===b.id+"rejected"} onClick={()=>act(b,"rejected")}>Reject</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="card">
+        <h3>Reviewed ({reviewed.length})</h3>
+        {reviewed.length === 0 ? (
+          <div className="empty"><div className="empty-sub">No reviewed brands yet.</div></div>
+        ) : (
+          <table>
+            <thead><tr><th>Brand</th><th>Category</th><th>Status</th></tr></thead>
+            <tbody>
+              {reviewed.map(b => (
+                <tr key={b.id}>
+                  <td><b>{b.brand_name||b.name||"—"}</b><br/><span style={{color:'var(--ink-3)',fontSize:12}}>{b.email||""}</span></td>
+                  <td>{b.category||"—"}</td>
+                  <td><span className={"status-pill " + b.status}>{b.status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
+  );
+}
+
+function Creators({ creators }) {
+  return (
+    <div className="card">
+      <h3>Registered creators ({creators.length})</h3>
+      <div className="hint">Everyone who has completed phone OTP signup on the creator app.</div>
+      {creators.length === 0 ? (
+        <div className="empty">
+          <div className="empty-title">No creators yet</div>
+          <div className="empty-sub">Share the app link with Gwalior creators — signups land here automatically.</div>
+        </div>
+      ) : (
+        <table>
+          <thead><tr><th>Name</th><th>Handle</th><th>Phone</th><th>City</th><th>Niches</th><th>Joined</th></tr></thead>
+          <tbody>
+            {creators.map(c => (
+              <tr key={c.id}>
+                <td><b>{c.name||"—"}</b></td>
+                <td>@{c.handle||"—"}</td>
+                <td>{c.phone||"—"}</td>
+                <td>{c.city||"Gwalior"}</td>
+                <td style={{fontSize:12,color:'var(--ink-3)'}}>{c.niches||"—"}</td>
+                <td style={{color:'var(--ink-3)',fontSize:12}}>{c.created_at ? new Date(c.created_at).toLocaleDateString() : "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function Setup({ connected, toast }) {
+  return (
+    <>
+      <div className="card">
+        <h3>Connection status</h3>
+        <div className="hint">This admin panel talks to your Google Sheet via an Apps Script Web App. The creator webapp reads the same data.</div>
+        <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+          <span className={"conn " + (connected?"on":"off")}>
+            <span className="pulse"></span>
+            {connected ? "Backend connected" : "Not connected"}
+          </span>
+          <button className="btn btn-ghost btn-sm" onClick={async()=>{
+            const r = await API.ping();
+            toast(r.ok ? "Backend is live ✓" : "Could not reach backend — check API_URL", r.ok?"ok":"err");
+          }}>Re-check</button>
+        </div>
+        <div style={{marginTop:14,padding:12,background:'var(--surface-2)',borderRadius:'var(--r-md)',fontSize:13,fontFamily:'monospace',wordBreak:'break-all'}}>
+          API_URL: {CFG().API_URL || <span style={{color:'var(--err)'}}>not set</span>}
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>How to connect (first time)</h3>
+        <div className="hint">Follow these 6 steps once. After this, everything is live and real.</div>
+        <ol style={{paddingLeft:20,lineHeight:1.9,fontSize:14,color:'var(--ink-2)'}}>
+          <li><b>Create a Google Sheet</b> named <i>Fluence DB</i>. Add 3 tabs: <code>Deals</code>, <code>Brands</code>, <code>Creators</code>. Copy the Sheet ID from the URL (the long string between <code>/d/</code> and <code>/edit</code>).</li>
+          <li><b>Open Apps Script</b> inside the Sheet: Extensions → Apps Script. Delete the placeholder code.</li>
+          <li><b>Paste</b> the contents of <code>backend/google-apps-script.gs</code> (in your Fluence folder). Replace <code>SHEET_ID</code> at the top with the ID from step 1.</li>
+          <li>In Apps Script run the function <code>initializeSheets</code> once (it sets up headers and seeds a demo deal). Grant permissions when asked.</li>
+          <li>Click <b>Deploy → New deployment → Web app</b>. <br/>Execute as: <i>Me</i>. Who has access: <i>Anyone</i>. Click Deploy → copy the Web app URL.</li>
+          <li>Paste that URL into the <code>API_URL</code> field at the top of both <code>admin-panel.html</code> and <code>index.html</code>, then save & re-open. You'll see "Backend connected" here ✓</li>
+        </ol>
+      </div>
+
+      <div className="card">
+        <h3>Brand onboarding form</h3>
+        <div className="hint">Brands submit applications through a Google Form; an Apps Script trigger writes them into the <code>Brands</code> tab automatically.</div>
+        <ol style={{paddingLeft:20,lineHeight:1.9,fontSize:14,color:'var(--ink-2)'}}>
+          <li>At <a href="https://forms.google.com" target="_blank" rel="noreferrer">forms.google.com</a> create a new form titled <i>Fluence — Brand onboarding</i>.</li>
+          <li>Add these questions <b>in this exact order</b> (names must match the <code>Brands</code> sheet headers):<br/>
+            <span className="kbd">brand_name</span> · <span className="kbd">contact_person</span> · <span className="kbd">email</span> · <span className="kbd">phone</span> · <span className="kbd">category</span> · <span className="kbd">budget</span> · <span className="kbd">goals</span> · <span className="kbd">website</span>
+          </li>
+          <li>Open form responses → Link to spreadsheet → select your Fluence DB sheet. Responses land in a new tab.</li>
+          <li>The Apps Script <code>onFormSubmit</code> trigger (already in the code) copies each response into the <code>Brands</code> tab with status <b>pending</b>.</li>
+          <li>Share the form link on WhatsApp, Instagram bio, and your brand pitches. Approvals happen right here in the <b>Brand applications</b> tab.</li>
+        </ol>
+      </div>
+
+      <div className="card">
+        <h3>Phone OTP (real, free)</h3>
+        <div className="hint">Firebase Phone Auth gives you 10,000 free SMS/month in India — more than enough to start.</div>
+        <ol style={{paddingLeft:20,lineHeight:1.9,fontSize:14,color:'var(--ink-2)'}}>
+          <li>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer">console.firebase.google.com</a> → Add project → name it <i>Fluence</i>.</li>
+          <li>Build → Authentication → Get started → Sign-in method → enable <b>Phone</b>.</li>
+          <li>Project settings → General → scroll to <i>Your apps</i> → add a Web app. Copy the <code>firebaseConfig</code> object.</li>
+          <li>Paste it into <code>window.FLUENCE.FIREBASE_CONFIG</code> at the top of <code>index.html</code>.</li>
+          <li>In Firebase → Authentication → Settings → Authorized domains → add your Netlify domain (e.g. <code>fluence-app.netlify.app</code>).</li>
+          <li>Re-deploy. Real OTPs will land on creator phones on sign-in.</li>
+        </ol>
+      </div>
+
+      <div className="card">
+        <h3>Quick links</h3>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+          <a className="btn btn-ghost" href="https://sheets.google.com" target="_blank" rel="noreferrer">Google Sheets</a>
+          <a className="btn btn-ghost" href="https://script.google.com" target="_blank" rel="noreferrer">Apps Script</a>
+          <a className="btn btn-ghost" href="https://forms.google.com" target="_blank" rel="noreferrer">Google Forms</a>
+          <a className="btn btn-ghost" href="https://console.firebase.google.com" target="_blank" rel="noreferrer">Firebase Console</a>
+          <a className="btn btn-ghost" href="https://app.netlify.com" target="_blank" rel="noreferrer">Netlify</a>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function App() {
+  const [page, setPage]         = useState("dash");
+  const [deals, setDeals]       = useState([]);
+  const [brands, setBrands]     = useState([]);
+  const [creators, setCreators] = useState([]);
+  const [connected, setConnected] = useState(false);
+  const [toasts, setToasts]     = useState([]);
+  const [loading, setLoading]   = useState(true);
+
+  function toast(msg, kind="info") {
+    const id = Date.now()+Math.random();
+    setToasts(t => [...t, {id,msg,kind}]);
+    setTimeout(()=> setToasts(t => t.filter(x=>x.id!==id)), 3200);
+  }
+
+  async function reload() {
+    if (!API.configured()) { setLoading(false); return; }
+    setLoading(true);
+    const [p, d, b, c] = await Promise.all([API.ping(), API.getDeals(), API.getBrands(), API.getCreators()]);
+    setConnected(!!(p && p.ok));
+    setDeals((d && d.deals) || []);
+    setBrands((b && b.brands) || []);
+    setCreators((c && c.creators) || []);
+    setLoading(false);
+  }
+
+  useEffect(() => { reload(); }, []);
+
+  const counts = {
+    pendingBrands: brands.filter(b=>(b.status||"pending")==="pending").length,
+    activeDeals:   deals.filter(d=>(d.status||"active")==="active").length
+  };
+
+  const titles = {
+    dash:     ["Dashboard",            "Everything at a glance"],
+    post:     ["Post new deal",        "Add a brand collab — goes live instantly"],
+    deals:    ["Manage deals",         "Pause, activate, and track your deals"],
+    brands:   ["Brand applications",   "Review brands that applied through your form"],
+    creators: ["Creators",             "Everyone signed up on the app"],
+    setup:    ["Setup & Settings",     "Connect Sheets, Forms, Firebase & Netlify"]
+  };
+
+  return (
+    <div className="layout">
+      <Sidebar page={page} setPage={setPage} counts={counts}/>
+      <main className="main">
+        <div className="page-head">
+          <div>
+            <div className="page-title">{titles[page][0]}</div>
+            <div className="page-sub">{titles[page][1]}</div>
+          </div>
+          <span className={"conn " + (connected?"on":"off")}>
+            <span className="pulse"></span>
+            {connected ? "Backend live" : (API.configured() ? "Cannot reach backend" : "Not connected")}
+          </span>
+        </div>
+
+        {!API.configured() && page!=="setup" && (
+          <div className="setup-banner">
+            <div style={{fontSize:24}}>⚙️</div>
+            <div style={{flex:1}}>
+              <h3>Finish the 5-minute setup to go live</h3>
+              <p>Paste your Apps Script <code>API_URL</code> at the top of <code>admin-panel.html</code> and <code>index.html</code>.<br/>
+              Full step-by-step guide is in <b>Setup & Settings</b>.</p>
+            </div>
+            <button className="btn btn-flame btn-sm" onClick={()=>setPage("setup")}>Open setup</button>
+          </div>
+        )}
+
+        {loading && API.configured() && (
+          <div className="card" style={{display:'flex',alignItems:'center',gap:10}}>
+            <span className="spinner"/><span>Loading data from your sheet…</span>
+          </div>
+        )}
+
+        {page==="dash"     && <Dashboard deals={deals} brands={brands} creators={creators} setPage={setPage}/>}
+        {page==="post"     && <PostDeal onPosted={reload} toast={toast}/>}
+        {page==="deals"    && <ManageDeals deals={deals} reload={reload} toast={toast}/>}
+        {page==="brands"   && <Brands brands={brands} reload={reload} toast={toast}/>}
+        {page==="creators" && <Creators creators={creators}/>}
+        {page==="setup"    && <Setup connected={connected} toast={toast}/>}
+      </main>
+      <Toasts list={toasts}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

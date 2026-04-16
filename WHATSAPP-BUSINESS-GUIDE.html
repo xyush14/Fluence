@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluence — WhatsApp Business Setup Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --flame:#E8553A; --flame-dark:#C2410C; --wa:#25D366; --wa-dark:#128C7E;
+    --ink:#1a1a1a; --ink-2:#4a4a4a; --muted:#8a8a8a;
+    --bg:#FAFAF9; --card:#fff; --border:#e8e4de; --tint:#FFF4EF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;font-size:16px}
+  .wrap{max-width:860px;margin:0 auto;padding:56px 24px 120px}
+
+  /* Header */
+  .hdr{margin-bottom:56px;padding-bottom:32px;border-bottom:2px solid var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:#25D366;color:#fff;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:20px}
+  .pill::before{content:'';width:6px;height:6px;background:#fff;border-radius:50%;animation:pulse 1.5s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  h1{font-family:'Instrument Serif',serif;font-size:64px;line-height:1;letter-spacing:-2px;font-weight:400;margin-bottom:16px}
+  h1 em{font-style:italic;color:var(--flame)}
+  .sub{font-size:20px;color:var(--ink-2);max-width:640px}
+  .meta{display:flex;gap:24px;flex-wrap:wrap;margin-top:24px;font-size:13px;color:var(--muted)}
+  .meta b{color:var(--ink);font-weight:600}
+
+  /* TOC */
+  .toc{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:56px}
+  .toc h3{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:16px;font-weight:600}
+  .toc ol{list-style:none;counter-reset:toc;display:grid;grid-template-columns:1fr 1fr;gap:10px 32px}
+  .toc li{counter-increment:toc;padding-left:32px;position:relative;font-size:15px}
+  .toc li::before{content:counter(toc,decimal-leading-zero);position:absolute;left:0;top:0;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--flame);font-weight:600;background:var(--tint);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .toc a{color:var(--ink);text-decoration:none;border-bottom:1px dashed transparent;transition:.2s}
+  .toc a:hover{border-bottom-color:var(--flame);color:var(--flame)}
+
+  /* Sections */
+  section{margin-bottom:72px;scroll-margin-top:24px}
+  .sec-num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--flame);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;font-weight:600}
+  h2{font-family:'Instrument Serif',serif;font-size:40px;line-height:1.05;letter-spacing:-1px;font-weight:400;margin-bottom:12px}
+  h2 em{font-style:italic;color:var(--flame)}
+  .sec-intro{font-size:17px;color:var(--ink-2);margin-bottom:28px;max-width:680px}
+  h3{font-size:20px;font-weight:600;margin:32px 0 12px;letter-spacing:-.3px}
+  h4{font-size:15px;font-weight:600;margin:20px 0 8px;letter-spacing:-.2px;color:var(--ink)}
+  p{margin-bottom:14px;color:var(--ink-2)}
+  p strong, li strong{color:var(--ink);font-weight:600}
+
+  /* Step cards */
+  .steps{display:flex;flex-direction:column;gap:12px;margin:20px 0}
+  .step{display:flex;gap:16px;padding:18px 20px;background:var(--card);border:1px solid var(--border);border-radius:12px}
+  .step .n{flex-shrink:0;width:30px;height:30px;background:var(--ink);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600}
+  .step .body{flex:1}
+  .step .body b{display:block;margin-bottom:2px;color:var(--ink);font-size:15px}
+  .step .body span{font-size:14px;color:var(--ink-2)}
+
+  /* Callouts */
+  .callout{padding:20px 24px;border-radius:12px;margin:20px 0;border-left:4px solid}
+  .callout.tip{background:#FFF4EF;border-color:var(--flame);color:#7a2c0c}
+  .callout.warn{background:#FFF8E6;border-color:#D97706;color:#78350F}
+  .callout.info{background:#EFF9F4;border-color:var(--wa-dark);color:#0d5c3f}
+  .callout b{display:block;margin-bottom:4px;text-transform:uppercase;font-size:11px;letter-spacing:1.5px;font-weight:700}
+
+  /* Code / scripts */
+  pre{background:#1a1a1a;color:#f5f5f5;padding:20px 24px;border-radius:12px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.6;margin:14px 0}
+  code{font-family:'JetBrains Mono',monospace;background:var(--tint);padding:2px 6px;border-radius:4px;font-size:13px;color:var(--flame-dark)}
+  pre code{background:none;padding:0;color:inherit;font-size:inherit}
+  .msg{background:#DCF8C6;color:#1a1a1a;padding:12px 16px;border-radius:12px;border-bottom-right-radius:2px;max-width:440px;margin:10px 0 10px auto;font-size:14px;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+  .msg.them{background:#fff;border:1px solid var(--border);margin:10px auto 10px 0;border-bottom-left-radius:2px;border-bottom-right-radius:12px}
+  .msg small{display:block;font-size:11px;color:var(--muted);margin-top:4px;text-align:right}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--border)}
+  th{font-weight:600;color:var(--ink);background:var(--tint);font-size:12px;letter-spacing:.5px;text-transform:uppercase}
+  td{color:var(--ink-2)}
+  td:first-child{color:var(--ink);font-weight:500}
+
+  /* Label chips */
+  .labels{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+  .chip{padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;border:1px solid}
+  .chip::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.9}
+  .chip.red{background:#FFF1F0;color:#B91C1C;border-color:#FECACA}
+  .chip.orange{background:#FFF4EF;color:var(--flame-dark);border-color:#FED7AA}
+  .chip.green{background:#EFF9F4;color:var(--wa-dark);border-color:#BBE5CD}
+  .chip.blue{background:#EEF4FF;color:#1E40AF;border-color:#C7D7FE}
+  .chip.purple{background:#F5F0FF;color:#6D28D9;border-color:#DDD0FE}
+  .chip.gray{background:#F3F3F1;color:#4a4a4a;border-color:#e0ddd7}
+
+  /* Link buttons */
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:var(--ink);color:#fff;border-radius:999px;text-decoration:none;font-weight:500;font-size:14px;transition:.2s}
+  .btn:hover{background:var(--flame);transform:translateY(-1px)}
+  .btn.wa{background:var(--wa)}
+  .btn.wa:hover{background:var(--wa-dark)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--border)}
+  .btn.ghost:hover{background:var(--ink);color:#fff}
+
+  /* Checklist */
+  .check{list-style:none;padding:0}
+  .check li{padding:10px 0 10px 32px;border-bottom:1px solid var(--border);position:relative;color:var(--ink-2)}
+  .check li::before{content:'';position:absolute;left:0;top:14px;width:16px;height:16px;border:2px solid var(--border);border-radius:4px;background:#fff}
+  .check li:last-child{border-bottom:none}
+
+  /* Footer */
+  .foot{margin-top:80px;padding-top:32px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--muted)}
+  .foot a{color:var(--flame);text-decoration:none}
+
+  /* Hero number card */
+  .numcard{background:linear-gradient(135deg,#128C7E 0%,#25D366 100%);color:#fff;padding:28px 32px;border-radius:20px;margin:24px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+  .numcard .label{font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.85;margin-bottom:6px}
+  .numcard .num{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:600;letter-spacing:-.5px}
+  .numcard .link{background:rgba(255,255,255,.15);padding:10px 18px;border-radius:999px;text-decoration:none;color:#fff;font-size:14px;font-weight:500;border:1px solid rgba(255,255,255,.3)}
+
+  @media (max-width:640px){
+    h1{font-size:44px}
+    h2{font-size:30px}
+    .toc ol{grid-template-columns:1fr}
+    .wrap{padding:32px 18px 80px}
+    .numcard{flex-direction:column;align-items:flex-start}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="pill">WhatsApp Business · Setup playbook</div>
+    <h1>Fluence on <em>WhatsApp</em>.</h1>
+    <p class="sub">Everything to configure the Fluence business WhatsApp so creators and brands get instant, professional replies — even when you're asleep.</p>
+    <div class="meta">
+      <span><b>Number:</b> +91 88156 21916</span>
+      <span><b>App:</b> WhatsApp Business (free)</span>
+      <span><b>Upgrade path:</b> WhatsApp Business API</span>
+      <span><b>Time to set up:</b> ~45 mins</span>
+    </div>
+  </header>
+
+  <!-- Number card -->
+  <div class="numcard">
+    <div>
+      <div class="label">Official Fluence Line</div>
+      <div class="num">+91 88156 21916</div>
+    </div>
+    <a class="link" href="https://wa.me/918815621916" target="_blank">wa.me/918815621916 →</a>
+  </div>
+
+  <!-- TOC -->
+  <nav class="toc">
+    <h3>What's inside</h3>
+    <ol>
+      <li><a href="#install">Install the app, not WhatsApp normal</a></li>
+      <li><a href="#profile">Set up the business profile</a></li>
+      <li><a href="#greeting">Greeting & away messages</a></li>
+      <li><a href="#quick">Quick replies (slash shortcuts)</a></li>
+      <li><a href="#labels">Labels for conversation pipeline</a></li>
+      <li><a href="#catalog">Catalog of live deals</a></li>
+      <li><a href="#broadcast">Broadcast lists (not groups)</a></li>
+      <li><a href="#links">Click-to-chat link templates</a></li>
+      <li><a href="#hygiene">Chat hygiene & SLA rules</a></li>
+      <li><a href="#api">When to upgrade to WhatsApp API</a></li>
+      <li><a href="#checklist">Final checklist</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1. INSTALL -->
+  <section id="install">
+    <div class="sec-num">Section 01</div>
+    <h2>Install <em>WhatsApp Business</em> — not regular WhatsApp.</h2>
+    <p class="sec-intro">WhatsApp has two apps. The business one is free, has all the features we need (profile, auto-replies, labels, catalog), and runs alongside normal WhatsApp on the same phone.</p>
+
+    <div class="steps">
+      <div class="step"><div class="n">1</div><div class="body"><b>Get a dedicated phone (or dual-SIM slot)</b><span>Ideally a cheap Android phone that stays on 24/7 with +91 88156 21916 as the primary SIM. This becomes the Fluence command center.</span></div></div>
+      <div class="step"><div class="n">2</div><div class="body"><b>Download WhatsApp Business from the Play Store / App Store</b><span>Search for "WhatsApp Business" (green icon with "B"). Not the regular green one.</span></div></div>
+      <div class="step"><div class="n">3</div><div class="body"><b>Verify with OTP on +91 88156 21916</b><span>WhatsApp sends a 6-digit code. Enter it. Do NOT restore a backup from a personal account — start clean.</span></div></div>
+      <div class="step"><div class="n">4</div><div class="body"><b>Link WhatsApp Web on laptop</b><span>Settings → Linked devices → Link a device. Scan QR from <code>web.whatsapp.com</code>. Now we can reply from keyboard, 10× faster.</span></div></div>
+      <div class="step"><div class="n">5</div><div class="body"><b>Enable two-step verification</b><span>Settings → Account → Two-step verification → Set a 6-digit PIN. Add a recovery email. Non-negotiable — this number is our business.</span></div></div>
+    </div>
+
+    <div class="callout tip"><b>Tip</b>If a personal WhatsApp is already on +91 88156 21916, migrate it off or use a new SIM. Fluence needs the business app, and the same number can't run both.</div>
+  </section>
+
+  <!-- 2. PROFILE -->
+  <section id="profile">
+    <div class="sec-num">Section 02</div>
+    <h2>Business <em>profile</em> — the first impression.</h2>
+    <p class="sec-intro">When someone messages us, they tap the header to see who we are. Make it obvious this is legit.</p>
+
+    <p>Go to <code>Settings → Business tools → Business profile</code> and fill:</p>
+
+    <table>
+      <tr><th>Field</th><th>What to put</th></tr>
+      <tr><td>Display name</td><td>Fluence</td></tr>
+      <tr><td>Profile photo</td><td>The Fluence flame logomark (1024×1024 PNG, warm orange on stone)</td></tr>
+      <tr><td>Category</td><td>Marketing Agency <em>or</em> Professional Services</td></tr>
+      <tr><td>Description</td><td>Get paid to post. Fluence matches local creators with local brands — cafes, salons, gyms, boutiques — for paid collabs, free meals, and brand trials. Open to creators of every size.</td></tr>
+      <tr><td>Address</td><td>Online / Remote (can skip a physical address while lean)</td></tr>
+      <tr><td>Business hours</td><td>Mon–Sat, 10:00 – 20:00 IST (set honest hours; the away message fills the rest)</td></tr>
+      <tr><td>Email</td><td>Your primary email (the Gmail we signed up forms with)</td></tr>
+      <tr><td>Website</td><td>The Netlify landing URL — <code>https://fluence.netlify.app</code> (or final domain)</td></tr>
+    </table>
+
+    <div class="callout info"><b>Why this matters</b>A filled business profile + green badge eventually = 3× higher trust from brands. Brands are wary of DMs from random numbers; a polished profile closes that gap instantly.</div>
+  </section>
+
+  <!-- 3. GREETING -->
+  <section id="greeting">
+    <div class="sec-num">Section 03</div>
+    <h2>Greeting & <em>away</em> messages.</h2>
+    <p class="sec-intro">These are the only two auto-replies WhatsApp Business gives us for free. Use them well — they shape the first 5 seconds of every conversation.</p>
+
+    <h3>Greeting message</h3>
+    <p>Sent automatically to anyone who messages us for the first time, or after 14 days of inactivity. Set at <code>Business tools → Greeting message</code>.</p>
+
+    <div class="msg them">Hey</div>
+    <div class="msg">👋 Welcome to <b>Fluence</b> — get paid to post by local brands.<br><br>Quick — are you a:<br>1️⃣ Creator looking for paid collabs<br>2️⃣ Brand looking for creators<br>3️⃣ Something else<br><br>Reply with 1, 2, or 3 and we'll take it from there.<small>auto-reply · 10:04 AM</small></div>
+
+    <h4>Exact text to paste:</h4>
+    <pre><code>👋 Welcome to *Fluence* — get paid to post by local brands.
+
+Quick — are you a:
+1️⃣ Creator looking for paid collabs
+2️⃣ Brand looking for creators
+3️⃣ Something else
+
+Reply with 1, 2, or 3 and we'll take it from there.</code></pre>
+
+    <h3>Away message</h3>
+    <p>Sent outside business hours. Set at <code>Business tools → Away message</code>. Choose <b>"Outside business hours"</b> so it uses the schedule we just set in the profile.</p>
+
+    <div class="msg them">hey are you there</div>
+    <div class="msg">Hey! Fluence replies are <b>live Mon–Sat, 10 AM – 8 PM IST</b>. You've caught us off-hours, but drop your message and we'll be on it first thing.<br><br>Meanwhile: <b>fluence.netlify.app</b> — browse live deals, sign up in 60 seconds.<small>auto-reply · 11:42 PM</small></div>
+
+    <h4>Exact text to paste:</h4>
+    <pre><code>Hey! Fluence replies are *live Mon–Sat, 10 AM – 8 PM IST*. You've caught us off-hours, but drop your message and we'll be on it first thing.
+
+Meanwhile: *fluence.netlify.app* — browse live deals, sign up in 60 seconds.</code></pre>
+
+    <div class="callout warn"><b>Rule</b>Never set an away message for business hours. It looks lazy. Reply yourself during 10–8.</div>
+  </section>
+
+  <!-- 4. QUICK REPLIES -->
+  <section id="quick">
+    <div class="sec-num">Section 04</div>
+    <h2>Quick replies — <em>slash</em> shortcuts.</h2>
+    <p class="sec-intro">Typing out the same 10 answers 50× a day kills us. Quick replies = type <code>/signup</code>, press enter, done. Set up at <code>Business tools → Quick replies</code>.</p>
+
+    <p>Create these 10 quick replies (copy text exactly):</p>
+
+    <h4><code>/signup</code></h4>
+    <pre><code>Here's the creator signup — takes 60 seconds:
+👉 fluence.netlify.app
+
+You'll fill in city, Insta handle, follower count, and categories you're into (food/fashion/fitness/etc). Once approved, you'll see all live deals in your city.</code></pre>
+
+    <h4><code>/howitworks</code></h4>
+    <pre><code>How Fluence works:
+1. Brand posts a deal (e.g. "Cafe X — 5 creators, 1 reel, ₹500 + free meal")
+2. You browse and apply
+3. Brand approves → you create → post → get paid
+4. We handle the awkward part — negotiation, follow-ups, payouts.
+
+Zero fee for creators. Ever.</code></pre>
+
+    <h4><code>/brand</code></h4>
+    <pre><code>For brands it's dead simple:
+- Post your deal (creators needed, budget, deliverable)
+- We send you a shortlist within 48 hrs
+- You approve, they post, your tag gets seen by real locals
+
+No contracts. No minimum spend. First deal free if you're one of our pilot brands — reply "pilot" and I'll set you up.</code></pre>
+
+    <h4><code>/pricing</code></h4>
+    <pre><code>Creators: 100% free, always.
+Brands: pay per deal. We take a small platform fee on each closed deal — no subscriptions, no setup cost.
+
+Pilot brands (first 10 in a city): first deal on the house.</code></pre>
+
+    <h4><code>/payment</code></h4>
+    <pre><code>Payment flow:
+1. Brand funds the deal upfront (escrow with Fluence)
+2. You post + send us the link
+3. Money in your UPI within 48 hrs of post approval
+
+No chasing. No "sir payment next week". Ever.</code></pre>
+
+    <h4><code>/categories</code></h4>
+    <pre><code>Live deal categories on Fluence:
+🍽️ Food & cafes
+💇 Salons & beauty
+🏋️ Fitness & gyms
+👗 Fashion & boutiques
+🏨 Staycations & hotels
+🎓 Coaching & edtech
+🛍️ D2C product trials
+
+Pick what you post about — you'll only see deals in those buckets.</code></pre>
+
+    <h4><code>/approved</code></h4>
+    <pre><code>🎉 You're approved on Fluence!
+
+Open the app → fluence.netlify.app/app — all deals in your city are now visible.
+
+Pro tip: apply to 3–5 deals in your first week. Early creators get priority access when new deals drop.</code></pre>
+
+    <h4><code>/rejected</code></h4>
+    <pre><code>Hey — thanks for signing up. We're holding your application for now because [reason].
+
+This doesn't mean never. Keep creating, grow your audience a bit, and reapply anytime. We re-review every 30 days.</code></pre>
+
+    <h4><code>/refer</code></h4>
+    <pre><code>Love this. Share your unique link:
+fluence.netlify.app/r/[yourhandle]
+
+For every creator who signs up + closes their first deal, you earn a ₹100 bonus credited to your next payout. No cap.</code></pre>
+
+    <h4><code>/talk</code></h4>
+    <pre><code>Happy to hop on a quick call — 10 mins max.
+
+Pick a slot: cal.com/fluence (or just drop 2–3 time windows and I'll confirm).</code></pre>
+
+    <div class="callout tip"><b>Tip</b>Attach a photo or the app screenshot to <code>/signup</code> and <code>/howitworks</code> — WhatsApp lets quick replies include media. Visuals convert 2× better.</div>
+  </section>
+
+  <!-- 5. LABELS -->
+  <section id="labels">
+    <div class="sec-num">Section 05</div>
+    <h2>Labels = our <em>mini CRM</em>.</h2>
+    <p class="sec-intro">Labels turn WhatsApp into a pipeline. Open any chat → ⋮ → Label chat. Delete the defaults, create these 8:</p>
+
+    <div class="labels">
+      <span class="chip red">🔥 Hot lead</span>
+      <span class="chip orange">✨ New creator</span>
+      <span class="chip green">✅ Approved creator</span>
+      <span class="chip blue">🏬 Brand</span>
+      <span class="chip purple">💬 Deal negotiating</span>
+      <span class="chip gray">⏸ Waiting on them</span>
+      <span class="chip green">💰 Paid / closed</span>
+      <span class="chip red">❌ Dropped</span>
+    </div>
+
+    <h3>When to apply which</h3>
+    <table>
+      <tr><th>Label</th><th>Trigger</th></tr>
+      <tr><td>🔥 Hot lead</td><td>Someone replying fast, asking smart questions, clearly serious</td></tr>
+      <tr><td>✨ New creator</td><td>Just signed up, not yet approved</td></tr>
+      <tr><td>✅ Approved creator</td><td>Live in the app, can apply to deals</td></tr>
+      <tr><td>🏬 Brand</td><td>Any brand inquiry, pre- or post-signup</td></tr>
+      <tr><td>💬 Deal negotiating</td><td>Specific deal in flight — terms being finalized</td></tr>
+      <tr><td>⏸ Waiting on them</td><td>Ball in their court. Follow up in 48 hrs if silent</td></tr>
+      <tr><td>💰 Paid / closed</td><td>Payment sent or deal fully delivered</td></tr>
+      <tr><td>❌ Dropped</td><td>Ghosted after 3 pings or explicitly not interested</td></tr>
+    </table>
+
+    <div class="callout info"><b>Daily routine</b>Every morning, open the <code>⏸ Waiting on them</code> filter. Any chat older than 48 hrs → send a one-line nudge. This single habit = 30% more closed deals.</div>
+  </section>
+
+  <!-- 6. CATALOG -->
+  <section id="catalog">
+    <div class="sec-num">Section 06</div>
+    <h2>Catalog — live deals <em>inside</em> the chat.</h2>
+    <p class="sec-intro">WhatsApp's catalog feature lets us show deals as a scrollable product list right in the chat. Brands love it. It feels premium.</p>
+
+    <p>Set up: <code>Business tools → Catalog → Add item</code>. For each live deal, create a catalog entry:</p>
+
+    <table>
+      <tr><th>Field</th><th>Example</th></tr>
+      <tr><td>Image</td><td>Brand logo or hero product shot (square, min 500×500)</td></tr>
+      <tr><td>Name</td><td>Cafe Mocha — 5 creator reel collab</td></tr>
+      <tr><td>Price</td><td>₹500 + free meal worth ₹600</td></tr>
+      <tr><td>Description</td><td>1 Instagram reel + 1 story. Creators needed: 5. Min 1K followers. Deliver in 7 days.</td></tr>
+      <tr><td>Link</td><td>Deep link to the deal in our app (once built)</td></tr>
+      <tr><td>Item code</td><td>FLU-CAFEMOCHA-001 (for our internal tracking)</td></tr>
+    </table>
+
+    <p>Then in any chat with an interested creator, tap the <b>📎 attachment</b> → <b>Catalog</b> → pick the deal → they get a rich preview card.</p>
+
+    <div class="callout tip"><b>Tip</b>Keep max 10 items in catalog. Remove closed deals. A stale catalog feels like a dead store.</div>
+  </section>
+
+  <!-- 7. BROADCAST -->
+  <section id="broadcast">
+    <div class="sec-num">Section 07</div>
+    <h2>Broadcast lists (<em>not</em> groups).</h2>
+    <p class="sec-intro">Groups are chaotic. Broadcast lists let us send a single message to up to 256 creators — each receives it as a private message, no one sees the others. This is how we announce new deals without spam.</p>
+
+    <h3>Lists to create</h3>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><div class="body"><b>🍽️ Food creators</b><span>All approved creators who picked "food & cafes" as a category.</span></div></div>
+      <div class="step"><div class="n">2</div><div class="body"><b>💇 Beauty & fashion</b><span>Salons, fashion, skincare creators.</span></div></div>
+      <div class="step"><div class="n">3</div><div class="body"><b>🏋️ Fitness & wellness</b><span>Gyms, trainers, wellness.</span></div></div>
+      <div class="step"><div class="n">4</div><div class="body"><b>🏬 All active brands</b><span>Brands with at least 1 deal live or closed in last 90 days.</span></div></div>
+      <div class="step"><div class="n">5</div><div class="body"><b>⭐ Top 50 creators</b><span>Highest-rated, most reliable. First dibs on premium deals.</span></div></div>
+    </div>
+
+    <h3>Broadcast etiquette</h3>
+    <ul class="check">
+      <li><b>Max 2 broadcasts per week.</b> More = people mute the number.</li>
+      <li><b>Always start with context.</b> "Hey Priya — new deal in your city that matches your style." Never plain "🔥 NEW DEAL".</li>
+      <li><b>Include a clear CTA.</b> "Reply 'in' to apply" or "Tap here: [link]".</li>
+      <li><b>Recipients must have saved our number</b> — otherwise the broadcast won't deliver. Always end the signup flow with "Save +91 88156 21916 as Fluence — we'll DM you live deals."</li>
+    </ul>
+  </section>
+
+  <!-- 8. LINKS -->
+  <section id="links">
+    <div class="sec-num">Section 08</div>
+    <h2>Click-to-chat <em>links</em>.</h2>
+    <p class="sec-intro">A <code>wa.me</code> link opens WhatsApp with our number + a pre-filled message. Drop these everywhere — landing page, Instagram bio, email signature, business card, flyers.</p>
+
+    <h3>Base link</h3>
+    <pre><code>https://wa.me/918815621916</code></pre>
+
+    <h3>With pre-filled message</h3>
+    <pre><code>https://wa.me/918815621916?text=Hey%20Fluence%20team%20—%20I'm%20a%20creator%20interested%20in%20joining</code></pre>
+
+    <h3>Ready-to-use templates</h3>
+
+    <h4>For the landing page "Creator" CTA</h4>
+    <pre><code>https://wa.me/918815621916?text=Hey%20Fluence%20—%20I'm%20a%20creator%20and%20want%20to%20join</code></pre>
+
+    <h4>For the landing page "Brand" CTA</h4>
+    <pre><code>https://wa.me/918815621916?text=Hi%20Fluence%20—%20I%20run%20a%20local%20business%20and%20want%20to%20post%20a%20deal</code></pre>
+
+    <h4>For Instagram bio link (shorter)</h4>
+    <pre><code>https://wa.me/918815621916?text=Fluence%2C%20I'm%20in</code></pre>
+
+    <h4>For error/contact in the app</h4>
+    <pre><code>https://wa.me/918815621916?text=Hi%20Fluence%20support%20—%20I%20need%20help%20with</code></pre>
+
+    <div class="callout info"><b>How to build your own</b>Start with <code>https://wa.me/918815621916?text=</code>, then URL-encode the message (replace spaces with <code>%20</code>, line breaks with <code>%0A</code>, etc). Or just use <a href="https://wa.me/" target="_blank">wa.me/</a>'s own generator.</div>
+
+    <div class="btn-row">
+      <a class="btn wa" href="https://wa.me/918815621916?text=Hey%20Fluence%20—%20I'm%20a%20creator%20and%20want%20to%20join" target="_blank">▶ Test creator link</a>
+      <a class="btn wa" href="https://wa.me/918815621916?text=Hi%20Fluence%20—%20I%20run%20a%20local%20business%20and%20want%20to%20post%20a%20deal" target="_blank">▶ Test brand link</a>
+    </div>
+  </section>
+
+  <!-- 9. HYGIENE -->
+  <section id="hygiene">
+    <div class="sec-num">Section 09</div>
+    <h2>Chat hygiene & <em>SLA</em> rules.</h2>
+    <p class="sec-intro">The fastest way to kill a WhatsApp business is to reply slowly or inconsistently. Here's the standard we hold ourselves to.</p>
+
+    <h3>Response time SLAs</h3>
+    <table>
+      <tr><th>Who</th><th>Target</th><th>Max</th></tr>
+      <tr><td>🔥 Hot lead (brand)</td><td>&lt; 5 mins</td><td>30 mins</td></tr>
+      <tr><td>✨ New creator signup</td><td>&lt; 30 mins</td><td>2 hours</td></tr>
+      <tr><td>💬 Active deal thread</td><td>&lt; 15 mins</td><td>1 hour</td></tr>
+      <tr><td>❓ General question</td><td>&lt; 2 hours</td><td>Same business day</td></tr>
+      <tr><td>⏸ Waiting on them</td><td>Follow up at 48 hrs</td><td>Max 3 follow-ups then drop</td></tr>
+    </table>
+
+    <h3>Tone rules</h3>
+    <ul class="check">
+      <li>Short sentences. Line breaks between ideas. Nothing looks worse than a wall of text.</li>
+      <li>Match their energy. If they type "hey bro", we type casual. If they're formal, we stay formal.</li>
+      <li>No "Dear Sir/Madam". No "Please find attached". We're not a 2012 PSU.</li>
+      <li>Use emoji sparingly — 1 per message max, usually at start for punctuation.</li>
+      <li>Always end with a next step. "Want me to send the link?" beats "let me know".</li>
+    </ul>
+
+    <h3>Hard no's</h3>
+    <ul class="check">
+      <li>Never argue in writing. Move to a call.</li>
+      <li>Never share one creator's rate/details with another brand or creator.</li>
+      <li>Never promise a specific deal or amount before the brand confirms.</li>
+      <li>Never use the Fluence number for personal chats. Ever.</li>
+    </ul>
+  </section>
+
+  <!-- 10. API -->
+  <section id="api">
+    <div class="sec-num">Section 10</div>
+    <h2>When (and why) to upgrade to <em>WhatsApp API</em>.</h2>
+    <p class="sec-intro">Business App is perfect for 0–500 active chats a month. Past that, we need the WhatsApp Business Platform (API) to automate and scale.</p>
+
+    <h3>Signals we've outgrown the free app</h3>
+    <ul class="check">
+      <li>More than ~50 inbound messages per day</li>
+      <li>Needing to send more than 2 broadcasts a week to the same creators</li>
+      <li>Wanting to auto-send deal notifications when a new deal is posted in the admin panel</li>
+      <li>Needing 2+ people answering chats from the same number simultaneously</li>
+      <li>Running CRM-style sequences (drip reminders, re-engagement)</li>
+    </ul>
+
+    <h3>Preferred BSPs (Business Solution Providers) in India</h3>
+    <table>
+      <tr><th>BSP</th><th>Best for</th><th>Starting price</th></tr>
+      <tr><td>AiSensy</td><td>Simple setup, no-code broadcasts, bot builder</td><td>~₹999/mo</td></tr>
+      <tr><td>Gupshup</td><td>Enterprise scale, deep API, custom workflows</td><td>Pay per msg</td></tr>
+      <tr><td>Wati</td><td>Shared inbox, team collaboration, chatbots</td><td>~₹2,499/mo</td></tr>
+      <tr><td>DoubleTick</td><td>Mid-market, good UX, CRM built-in</td><td>~₹2,000/mo</td></tr>
+    </table>
+
+    <div class="callout warn"><b>Important</b>Once we move to the API, the WhatsApp Business App on the phone STOPS WORKING for this number. It's one-way. Pick the right BSP the first time — migration back is painful.</div>
+
+    <h3>What we'd build on API (future)</h3>
+    <ul class="check">
+      <li><b>Auto-welcome</b> from the admin panel → new creator gets a DM the moment they submit the signup form.</li>
+      <li><b>Deal alerts</b> — when a brand posts a deal in category X, push a template message to all matching creators.</li>
+      <li><b>Status updates</b> — "Your application was approved / post is live / payment sent" all auto-triggered from the Google Sheet.</li>
+      <li><b>Two-factor auth</b> for creator login via WhatsApp OTP (cheaper than SMS long-term).</li>
+    </ul>
+
+    <div class="callout info"><b>When to seriously consider it</b>Around month 4-6 — when we have 300+ creators and 10+ active brands. Start a trial on AiSensy's free tier to test.</div>
+  </section>
+
+  <!-- 11. CHECKLIST -->
+  <section id="checklist">
+    <div class="sec-num">Section 11</div>
+    <h2>Final <em>checklist</em>.</h2>
+    <p class="sec-intro">Hit every box and we're live.</p>
+    <ul class="check">
+      <li>WhatsApp Business app installed on dedicated device with +91 88156 21916</li>
+      <li>Two-step verification enabled with recovery email</li>
+      <li>WhatsApp Web linked on laptop</li>
+      <li>Business profile complete (name, logo, description, hours, website)</li>
+      <li>Greeting message live ("Welcome to Fluence…")</li>
+      <li>Away message live (outside business hours)</li>
+      <li>All 10 quick replies saved with correct slash shortcuts</li>
+      <li>8 labels created (Hot lead → Dropped)</li>
+      <li>Catalog populated with 3–5 live deals</li>
+      <li>5 broadcast lists created (Food / Beauty / Fitness / Brands / Top 50)</li>
+      <li>Click-to-chat links added to landing page (Creator CTA + Brand CTA)</li>
+      <li>Click-to-chat link added to Instagram bio</li>
+      <li>Click-to-chat link added to admin panel (Setup tab)</li>
+      <li>Click-to-chat link added to creator app (support/contact)</li>
+      <li>First test message sent from a second phone — greeting + labels working</li>
+    </ul>
+
+    <div class="callout tip"><b>Sanity test</b>From a phone that's never messaged us, send "Hey" to +91 88156 21916. If the greeting auto-replies within 2 seconds and we can label the chat on our end → we're live. 🚀</div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="foot">
+    <div>Fluence · WhatsApp Business playbook · v1.0</div>
+    <div><a href="https://wa.me/918815621916" target="_blank">wa.me/918815621916</a></div>
+  </footer>
+
+</div>
+
+</body>
+</html>

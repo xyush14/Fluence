@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluence — Master Setup Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAF9; --surface:#FFFFFF; --ink:#1C1917; --ink-2:#44403C; --ink-3:#78716C;
+    --border:#E7E5E4; --flame:#E8553A; --flame-2:#C2410C; --flame-soft:#FFF1EC;
+    --ok:#15803D; --ok-soft:#DCFCE7; --warn:#B45309; --warn-soft:#FEF3C7;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:48px 24px 96px}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+  header h1{font-size:32px;font-weight:800;letter-spacing:-.7px}
+  header p{font-size:14px;color:var(--ink-3);margin-top:4px}
+  h2{font-size:22px;font-weight:800;letter-spacing:-.4px;margin:40px 0 12px;padding-top:12px}
+  h2 .num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--flame);color:#fff;border-radius:999px;font-size:14px;font-weight:800;margin-right:12px}
+  h3{font-size:16px;font-weight:700;margin:20px 0 8px}
+  p{margin-bottom:10px;color:var(--ink-2);font-size:15px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:14px}
+  .tip{background:var(--flame-soft);border-left:4px solid var(--flame);padding:12px 16px;border-radius:8px;margin:12px 0;font-size:14px;color:var(--ink-2)}
+  .warn{background:var(--warn-soft);border-left:4px solid var(--warn);padding:12px 16px;border-radius:8px;margin:12px 0;font-size:14px;color:var(--ink-2)}
+  .ok{background:var(--ok-soft);border-left:4px solid var(--ok);padding:12px 16px;border-radius:8px;margin:12px 0;font-size:14px;color:var(--ink-2)}
+  code{background:#F5F5F4;padding:2px 7px;border-radius:6px;font-size:13px;border:1px solid var(--border);font-family:'SF Mono',Consolas,monospace}
+  pre{background:#1C1917;color:#F5F5F4;padding:16px 20px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.6;font-family:'SF Mono',Consolas,monospace;margin:12px 0}
+  ol,ul{padding-left:22px;margin-bottom:12px}
+  li{margin-bottom:8px;color:var(--ink-2);font-size:15px}
+  a{color:var(--flame);font-weight:600;text-decoration:none;border-bottom:1px solid transparent}
+  a:hover{border-bottom-color:var(--flame)}
+  .logo{width:48px;height:48px}
+  .toc{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:32px}
+  .toc h3{margin-top:0}
+  .toc a{display:block;padding:4px 0;font-weight:500;color:var(--ink-2);border:none}
+  .toc a:hover{color:var(--flame)}
+  .kbd{background:#F5F5F4;border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-size:12px;font-family:monospace;color:var(--ink)}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+  th{background:#F5F5F4;text-align:left;padding:10px 12px;font-weight:700;border:1px solid var(--border)}
+  td{padding:10px 12px;border:1px solid var(--border);color:var(--ink-2)}
+  .check{display:flex;align-items:flex-start;gap:10px;padding:10px 0;font-size:15px}
+  .check input{margin-top:5px;accent-color:var(--flame);transform:scale(1.1)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <svg class="logo" viewBox="0 0 56 56">
+    <defs><linearGradient id="fl" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FF7A4A"/><stop offset="100%" stop-color="#C2410C"/></linearGradient></defs>
+    <rect width="56" height="56" rx="14" fill="url(#fl)"/>
+    <path d="M28 12 C32 20, 40 22, 38 32 C37 40, 30 44, 28 44 C26 44, 19 40, 18 32 C16 22, 24 20, 28 12 Z" fill="#fff" opacity=".95"/>
+    <circle cx="28" cy="34" r="4" fill="#FFD7B5"/>
+  </svg>
+  <div>
+    <h1>Fluence — Master Setup Guide</h1>
+    <p>Go from "uploaded files" to "fully live, real app" in about 30 minutes. Written for a zero-code founder.</p>
+  </div>
+</header>
+
+<div class="toc">
+  <h3>What you'll set up</h3>
+  <a href="#step1">1. Google Sheet (your database)</a>
+  <a href="#step2">2. Apps Script backend (the API)</a>
+  <a href="#step3">3. Google Form (brand onboarding)</a>
+  <a href="#step4">4. Firebase Phone Auth (real OTP, free)</a>
+  <a href="#step5">5. Paste keys into both HTML files</a>
+  <a href="#step6">6. Re-deploy to Netlify</a>
+  <a href="#checklist">Final checklist</a>
+  <a href="#faq">FAQ / troubleshooting</a>
+</div>
+
+<div class="tip"><b>Before you begin.</b> Keep this tab open. Open another tab for each service as you go. Everything is free to start.</div>
+
+<!-- STEP 1 -->
+<h2 id="step1"><span class="num">1</span>Google Sheet — your database</h2>
+<div class="card">
+  <p>The whole backend lives in one Google Sheet with three tabs. This is where deals, brand applications, and creators are stored.</p>
+  <ol>
+    <li>Go to <a href="https://sheets.google.com" target="_blank">sheets.google.com</a> → <b>+ Blank</b>.</li>
+    <li>Rename the file to <b>Fluence DB</b>.</li>
+    <li>At the bottom, rename <i>Sheet1</i> to <code>Deals</code>. Then click <b>+</b> twice to add two more tabs: <code>Brands</code> and <code>Creators</code>.</li>
+    <li>Look at the URL. It will look like:
+      <pre>https://docs.google.com/spreadsheets/d/<b>1AbCdEf...xyz</b>/edit#gid=0</pre>
+      Copy the bold part — that's your <b>Sheet ID</b>. Save it in a scratchpad; you'll paste it in Step 2.</li>
+  </ol>
+  <div class="ok"><b>Don't add headers manually.</b> The Apps Script in Step 2 creates headers for you automatically.</div>
+</div>
+
+<!-- STEP 2 -->
+<h2 id="step2"><span class="num">2</span>Apps Script — the backend API</h2>
+<div class="card">
+  <p>Apps Script is free Google code that runs in the cloud. It turns your sheet into a REST API that the admin panel and creator app can talk to.</p>
+  <ol>
+    <li>In the Fluence DB sheet: <b>Extensions → Apps Script</b>. A new tab opens.</li>
+    <li>Delete whatever code is there by default (the empty <code>function myFunction</code>).</li>
+    <li>In your Fluence folder, open <code>backend/google-apps-script.gs</code>. Copy all of its contents (Cmd/Ctrl + A, then Cmd/Ctrl + C).</li>
+    <li>Paste it into the Apps Script editor.</li>
+    <li>At the top of the pasted code, find:
+      <pre>const SHEET_ID = "PASTE_YOUR_SHEET_ID_HERE";
+const ADMIN_SECRET = "fluence_admin_2026_change_me";</pre>
+      Replace the first value with the Sheet ID you copied in Step 1. Optionally change the admin secret (any random string).</li>
+    <li>Click the floppy-disk icon to <b>Save</b> (name the project <i>Fluence API</i>).</li>
+    <li>In the function dropdown at the top, select <code>initializeSheets</code> and click <b>Run</b>. Google will ask for permissions → <b>Review permissions</b> → pick your account → <b>Advanced → Go to Fluence API (unsafe)</b> → <b>Allow</b>. (It says "unsafe" only because you're the developer; it's your own code.)</li>
+    <li>Go back to your sheet — the three tabs are now filled with headers, and <code>Deals</code> has one sample deal.</li>
+    <li>In Apps Script, click <b>Deploy → New deployment → ⚙ (gear) → Web app</b>. Fill in:
+      <ul>
+        <li>Description: <i>Fluence API v1</i></li>
+        <li>Execute as: <b>Me</b></li>
+        <li>Who has access: <b>Anyone</b></li>
+      </ul>
+      Click <b>Deploy</b>. Approve access again if asked.</li>
+    <li>You'll see a <b>Web app URL</b> ending in <code>/exec</code>. Copy it. This is your <b>API_URL</b>. Save it in the scratchpad.</li>
+  </ol>
+  <div class="tip">Every time you change the Apps Script code, click <b>Deploy → Manage deployments → ✏️ (pencil) → Version: New version → Deploy</b>. The URL stays the same.</div>
+</div>
+
+<!-- STEP 3 -->
+<h2 id="step3"><span class="num">3</span>Google Form — brand onboarding</h2>
+<div class="card">
+  <p>Brands fill out this form, responses flow into your <code>Brands</code> tab as "pending", and you review/approve them in the admin panel.</p>
+  <ol>
+    <li>Go to <a href="https://forms.google.com" target="_blank">forms.google.com</a> → <b>+ Blank</b>.</li>
+    <li>Title: <b>Fluence — Brand Onboarding (Gwalior)</b>.</li>
+    <li>Add these questions <b>in this exact order</b>. The question title must match the "Field name" column <em>exactly</em> (lowercase with underscores) because Apps Script uses them as headers:</li>
+  </ol>
+  <table>
+    <tr><th>Field name (= Form question title)</th><th>Type</th><th>Example label shown to brand</th></tr>
+    <tr><td><code>brand_name</code></td><td>Short answer</td><td>What's your brand / business name?</td></tr>
+    <tr><td><code>contact_person</code></td><td>Short answer</td><td>Your name</td></tr>
+    <tr><td><code>email</code></td><td>Short answer</td><td>Email address</td></tr>
+    <tr><td><code>phone</code></td><td>Short answer</td><td>WhatsApp number</td></tr>
+    <tr><td><code>category</code></td><td>Dropdown</td><td>Category (Food, Fashion, Salon, Gym, Events, Other)</td></tr>
+    <tr><td><code>budget</code></td><td>Short answer</td><td>Monthly marketing budget (₹)</td></tr>
+    <tr><td><code>goals</code></td><td>Paragraph</td><td>What do you want from creator collabs?</td></tr>
+    <tr><td><code>website</code></td><td>Short answer</td><td>Instagram / website link</td></tr>
+  </table>
+  <div class="warn"><b>Exact naming matters.</b> If the question title differs from the field name, the Apps Script onFormSubmit trigger won't know how to map it. If you prefer a prettier label for the brand, use the <i>question description</i> instead of changing the title.</div>
+  <ol start="4">
+    <li>Click the <b>Responses</b> tab → the green Sheets icon → <b>Select existing spreadsheet → Fluence DB</b>. A new tab called <i>Form Responses 1</i> will appear.</li>
+    <li>Back in Apps Script, click <b>Triggers (⏰ icon in left sidebar) → + Add Trigger</b>:
+      <ul>
+        <li>Function: <code>onFormSubmit</code></li>
+        <li>Event source: <b>From spreadsheet</b></li>
+        <li>Event type: <b>On form submit</b></li>
+      </ul>
+      Click Save. Grant permissions.</li>
+    <li>Click <b>Send</b> in the top-right of the form → copy the short link. That's the URL you'll share with brands via WhatsApp / Instagram bio / pitches.</li>
+    <li>Test it yourself: submit a fake brand. Within 5 seconds it should show up in the <code>Brands</code> tab with status <code>pending</code>, and in the admin panel under <b>Brand applications</b>.</li>
+  </ol>
+</div>
+
+<!-- STEP 4 -->
+<h2 id="step4"><span class="num">4</span>Firebase Phone Auth — real OTP, free</h2>
+<div class="card">
+  <p>Firebase's free tier gives you <b>10,000 SMS verifications per month in India</b>. More than enough to start.</p>
+  <ol>
+    <li>Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → <b>Add project</b> → name it <b>Fluence</b> → disable Google Analytics (optional) → Create.</li>
+    <li>In the left sidebar, click <b>Build → Authentication → Get started</b>.</li>
+    <li>Click <b>Sign-in method</b> tab → <b>Phone</b> → toggle <b>Enable</b> → Save.</li>
+    <li>Go to <b>⚙ Project settings → General</b>. Scroll to <b>Your apps</b>. Click the <b>&lt;/&gt; Web</b> icon. Register the app with nickname <i>Fluence Web</i> → skip hosting → Register.</li>
+    <li>You'll see a <code>firebaseConfig</code> block. Copy the values — you need these five:</li>
+  </ol>
+  <pre>apiKey:     "AIza..."
+authDomain: "fluence-xxxx.firebaseapp.com"
+projectId:  "fluence-xxxx"
+appId:      "1:1234:web:abc..."
+messagingSenderId: "1234..."</pre>
+  <ol start="6">
+    <li>In Authentication → <b>Settings</b> tab → <b>Authorized domains</b> → <b>Add domain</b> → add your Netlify domain (e.g. <code>fluence-app.netlify.app</code>) and also <code>localhost</code> for testing.</li>
+  </ol>
+  <div class="tip"><b>No billing required.</b> You stay on the free Spark plan. You only get charged if you ever exceed 10K SMS/month, which at Gwalior scale is years away.</div>
+</div>
+
+<!-- STEP 5 -->
+<h2 id="step5"><span class="num">5</span>Paste the keys into both HTML files</h2>
+<div class="card">
+  <p>Now wire everything together. Open your Fluence folder in Finder / File Explorer.</p>
+
+  <h3>A) In <code>index.html</code> (the creator app)</h3>
+  <p>Find the block near the top that says <code>window.FLUENCE = {</code> and fill it in:</p>
+  <pre>window.FLUENCE = {
+  API_URL: "https://script.google.com/macros/s/AKfyc.../exec",
+  FIREBASE_CONFIG: {
+    apiKey: "AIza...",
+    authDomain: "fluence-xxxx.firebaseapp.com",
+    projectId: "fluence-xxxx",
+    appId: "1:1234:web:abc...",
+    messagingSenderId: "1234..."
+  },
+  BRAND_ONBOARD_URL: "https://forms.gle/YOUR_FORM_ID"
+};</pre>
+
+  <h3>B) In <code>admin-panel.html</code></h3>
+  <p>Find the block at the top that says <code>window.FLUENCE_ADMIN = {</code> and fill in:</p>
+  <pre>window.FLUENCE_ADMIN = {
+  API_URL: "https://script.google.com/macros/s/AKfyc.../exec",
+  ADMIN_SECRET: "fluence_admin_2026_change_me"
+};</pre>
+  <div class="warn"><b>ADMIN_SECRET must match</b> whatever you set at the top of the Apps Script (Step 2). Otherwise the admin panel will get rejected by the backend.</div>
+
+  <p>Save both files. Open <code>admin-panel.html</code> by double-clicking it — you should see <b>Backend live</b> in the top-right corner.</p>
+</div>
+
+<!-- STEP 6 -->
+<h2 id="step6"><span class="num">6</span>Re-deploy to Netlify</h2>
+<div class="card">
+  <p>You already deployed once. Now that <code>index.html</code> has real keys, push the update:</p>
+  <ol>
+    <li>Copy the updated <code>index.html</code> into the <code>deploy/</code> folder in Fluence (overwriting the old one).</li>
+    <li>Go to <a href="https://app.netlify.com" target="_blank">app.netlify.com</a> → your Fluence site → <b>Deploys</b> tab.</li>
+    <li>Drag the <code>deploy</code> folder onto the "Drag and drop your site folder here" drop zone. Netlify publishes in ~10 seconds.</li>
+    <li>Open your live URL on your phone. Sign up with your real number — you should receive a real SMS OTP.</li>
+  </ol>
+  <div class="ok"><b>You're live.</b> Deals you post in admin-panel appear instantly in the creator app. Brand Form submissions show up in the approval queue. OTP is real.</div>
+</div>
+
+<!-- CHECKLIST -->
+<h2 id="checklist"><span class="num">✓</span>Final checklist — are we really live?</h2>
+<div class="card">
+  <div class="check"><input type="checkbox"/> <span>Google Sheet <b>Fluence DB</b> exists with <code>Deals</code>, <code>Brands</code>, <code>Creators</code> tabs.</span></div>
+  <div class="check"><input type="checkbox"/> <span>Apps Script <code>initializeSheets</code> ran successfully and seed data appears.</span></div>
+  <div class="check"><input type="checkbox"/> <span>Web app deployed; URL ends in <code>/exec</code>; opens without login.</span></div>
+  <div class="check"><input type="checkbox"/> <span>Google Form created with exactly the 8 field names from Step 3.</span></div>
+  <div class="check"><input type="checkbox"/> <span><code>onFormSubmit</code> trigger installed; test submission appears in admin panel.</span></div>
+  <div class="check"><input type="checkbox"/> <span>Firebase project created; Phone sign-in enabled; web app registered.</span></div>
+  <div class="check"><input type="checkbox"/> <span>Netlify domain + localhost added to Firebase Authorized domains.</span></div>
+  <div class="check"><input type="checkbox"/> <span><code>window.FLUENCE</code> in index.html has real API_URL, FIREBASE_CONFIG, BRAND_ONBOARD_URL.</span></div>
+  <div class="check"><input type="checkbox"/> <span><code>window.FLUENCE_ADMIN</code> in admin-panel.html has API_URL + matching ADMIN_SECRET.</span></div>
+  <div class="check"><input type="checkbox"/> <span>Updated <code>index.html</code> redeployed to Netlify.</span></div>
+  <div class="check"><input type="checkbox"/> <span>Received a real SMS OTP on your own phone via the live site.</span></div>
+  <div class="check"><input type="checkbox"/> <span>Posted a deal from admin-panel → it appears on the live creator app.</span></div>
+</div>
+
+<!-- FAQ -->
+<h2 id="faq"><span class="num">?</span>FAQ / troubleshooting</h2>
+<div class="card">
+  <h3>Admin panel says "Not connected"</h3>
+  <p>You haven't set <code>API_URL</code> in admin-panel.html, or you set it to the wrong URL. Make sure it ends in <code>/exec</code>. Also confirm the Apps Script deployment has "Who has access: Anyone".</p>
+
+  <h3>Admin panel says "Cannot reach backend"</h3>
+  <p>URL is set but calls are failing. Usual causes:</p>
+  <ul>
+    <li>You re-deployed Apps Script but clicked <b>New deployment</b> instead of <b>Manage deployments → Edit → New version</b> — generating a fresh URL. Copy the new URL back into admin-panel.html.</li>
+    <li>ADMIN_SECRET in HTML doesn't match the one in Apps Script.</li>
+  </ul>
+
+  <h3>Form submissions aren't showing up in Brand applications</h3>
+  <ul>
+    <li>Check Apps Script → Triggers — is <code>onFormSubmit</code> listed? Re-add it if not.</li>
+    <li>Open the <code>Form Responses 1</code> tab in the sheet. If responses are there but not in <code>Brands</code>, the Apps Script code might have errored. In Apps Script → <b>Executions</b> you'll see red error rows — click one and read the message.</li>
+    <li>Common cause: the form question title doesn't match the field name (e.g. "Brand Name" instead of <code>brand_name</code>).</li>
+  </ul>
+
+  <h3>OTP isn't arriving</h3>
+  <ul>
+    <li>Is your Netlify domain in Firebase → Authorized domains?</li>
+    <li>Open the page on your phone; is the reCAPTCHA widget appearing? If no, check the browser console.</li>
+    <li>Phone number must start with <code>+91</code> followed by 10 digits.</li>
+    <li>First SMS can take up to 60 seconds. Also check the spam SMS folder.</li>
+  </ul>
+
+  <h3>I want to change the admin secret later</h3>
+  <p>Change it in both places: top of the Apps Script file (then redeploy the web app version) and top of admin-panel.html. Creators' sign-in doesn't use the secret, so they're unaffected.</p>
+
+  <h3>How do I back up the data?</h3>
+  <p>It's already in Google Sheets — automatic history. Also: File → Download → .xlsx to keep a local copy whenever you want.</p>
+</div>
+
+<div class="tip" style="margin-top:40px;text-align:center;font-size:16px">
+  <b>That's it. You're a real webapp now.</b><br/>
+  Built for Gwalior. Made with 🔥 by Ayush & Fluence.
+</div>
+
+</div>
+</body>
+</html>

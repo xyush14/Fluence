@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Firebase + Google OAuth Setup — Fluence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--flame:#E8553A;--ink:#1a1a1a;--muted:#666;--bg:#FAFAF9;--card:#fff;--border:#e8e4de;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+.wrap{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:48px;font-weight:700;margin-bottom:8px;color:var(--flame)}
+.sub{font-size:18px;color:var(--muted);margin-bottom:40px}
+section{margin-bottom:60px;padding-bottom:40px;border-bottom:1px solid var(--border)}
+h2{font-size:28px;font-weight:600;margin-bottom:16px;color:var(--ink)}
+p{margin-bottom:14px;color:var(--ink)}
+code{background:var(--card);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono';font-size:13px;color:var(--flame)}
+pre{background:#1a1a1a;color:#f5f5f5;padding:16px;border-radius:8px;overflow-x:auto;font-family:'JetBrains Mono';font-size:12px;line-height:1.6;margin:16px 0}
+.box{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:20px;margin:16px 0}
+.box.warn{border-color:var(--flame);background:#FFF1EE}
+.box.warn strong{color:var(--flame)}
+.step{margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.step:last-child{border:none}
+.step-num{display:inline-block;background:var(--flame);color:#fff;width:32px;height:32px;border-radius:50%;text-align:center;line-height:32px;font-weight:600;margin-right:12px;margin-bottom:8px}
+.step h3{font-size:18px;font-weight:600;margin-bottom:8px}
+.step p{margin-bottom:10px;font-size:14px}
+.paste{background:#f5f5f5;border-left:4px solid var(--flame);padding:12px;margin:12px 0;font-family:'JetBrains Mono';font-size:12px;word-break:break-all;max-height:200px;overflow-y:auto}
+.copy-btn{background:var(--flame);color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;margin-top:8px}
+.copy-btn:hover{opacity:.9}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th,td{padding:12px;text-align:left;border-bottom:1px solid var(--border)}
+th{font-weight:600;background:var(--bg)}
+.check{color:var(--flame);font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<h1>🔥 Firebase + Google OAuth Setup</h1>
+<p class="sub">5-minute setup to get creators signing in with Google</p>
+
+<section>
+<h2>Step 1️⃣: Create Firebase Project</h2>
+
+<div class="step">
+  <span class="step-num">A</span>
+  <h3>Go to Firebase Console</h3>
+  <p>Visit <code>console.firebase.google.com</code></p>
+</div>
+
+<div class="step">
+  <span class="step-num">B</span>
+  <h3>Create New Project</h3>
+  <ul style="margin-left:20px">
+    <li>Click "Create Project"</li>
+    <li>Name: <code>fluence</code></li>
+    <li>Disable Analytics (optional)</li>
+    <li>Click "Create"</li>
+  </ul>
+</div>
+
+<div class="step">
+  <span class="step-num">C</span>
+  <h3>Get Firebase Config</h3>
+  <p>Once project is created:</p>
+  <ul style="margin-left:20px">
+    <li>Click gear icon ⚙️ (top-right) → "Project Settings"</li>
+    <li>Scroll down → "Your apps"</li>
+    <li>Click web icon <code>&lt;/&gt;</code></li>
+    <li>App name: <code>fluence-web</code></li>
+    <li>Click "Register app"</li>
+  </ul>
+  <p style="margin-top:16px"><strong>Copy the firebaseConfig object (the blue box with apiKey, authDomain, etc).</strong></p>
+  <div class="box warn">
+    <strong>⚠️ SAVE THIS!</strong> You'll need it in 5 minutes.
+  </div>
+</div>
+
+<div class="step">
+  <span class="step-num">D</span>
+  <h3>Enable Google Sign-In</h3>
+  <ul style="margin-left:20px">
+    <li>In Firebase console, go to "Authentication" (left sidebar)</li>
+    <li>Click "Sign-in method"</li>
+    <li>Enable "Google" (toggle ON)</li>
+    <li>Save</li>
+  </ul>
+</div>
+
+</section>
+
+<section>
+<h2>Step 2️⃣: Get Google Client ID</h2>
+
+<div class="step">
+  <span class="step-num">A</span>
+  <h3>Go to Google Cloud Console</h3>
+  <p>Visit <code>console.cloud.google.com</code></p>
+</div>
+
+<div class="step">
+  <span class="step-num">B</span>
+  <h3>Create OAuth Credentials</h3>
+  <ul style="margin-left:20px">
+    <li>Left sidebar → "APIs & Services" → "Credentials"</li>
+    <li>Click "Create Credentials" → "OAuth 2.0 Client IDs"</li>
+    <li>Application type: "Web application"</li>
+    <li>Name: <code>Fluence Web</code></li>
+  </ul>
+</div>
+
+<div class="step">
+  <span class="step-num">C</span>
+  <h3>Add Authorized Origins</h3>
+  <p>Under "Authorized JavaScript origins", add:</p>
+  <ul style="margin-left:20px">
+    <li><code>https://fluence.lol</code></li>
+    <li><code>https://app.fluence.lol</code></li>
+    <li><code>http://localhost:3000</code> (for testing)</li>
+  </ul>
+  <p style="margin-top:12px">Click "Create"</p>
+</div>
+
+<div class="step">
+  <span class="step-num">D</span>
+  <h3>Copy Your Client ID</h3>
+  <p><strong>Copy the "Client ID" (looks like: 123456789-abc...def.apps.googleusercontent.com)</strong></p>
+  <div class="box warn">
+    <strong>⚠️ SAVE THIS TOO!</strong>
+  </div>
+</div>
+
+</section>
+
+<section>
+<h2>Step 3️⃣: Paste into App</h2>
+
+<p><strong>You now have 2 things to paste:</strong></p>
+
+<table>
+  <tr>
+    <th>What</th>
+    <th>Where to find</th>
+    <th>Where to paste</th>
+  </tr>
+  <tr>
+    <td>firebaseConfig (JSON object)</td>
+    <td>Firebase Console → Project Settings</td>
+    <td><code>app-with-oauth.html</code> line 29-36</td>
+  </tr>
+  <tr>
+    <td>Google Client ID (string)</td>
+    <td>Google Cloud Console → Credentials</td>
+    <td><code>app-with-oauth.html</code> line 273</td>
+  </tr>
+</table>
+
+<div class="box warn">
+  <strong>In app-with-oauth.html, find these 2 lines and replace:</strong><br><br>
+
+  <strong>Line 29-36 (Firebase Config):</strong><br>
+  Replace the entire firebaseConfig object from your Firebase project settings.
+
+  <br><br>
+
+  <strong>Line 273 (Google Client ID):</strong><br>
+  Replace <code>YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com</code> with your actual Client ID
+</div>
+
+</section>
+
+<section>
+<h2>Step 4️⃣: Deploy to Netlify</h2>
+
+<div class="step">
+  <span class="step-num">1</span>
+  <h3>Update your GitHub repo</h3>
+  <pre>
+# In your fluence folder:
+cp app-with-oauth.html app/index.html
+git add app/index.html
+git commit -m "Add Google OAuth authentication"
+git push origin main
+  </pre>
+</div>
+
+<div class="step">
+  <span class="step-num">2</span>
+  <h3>Netlify auto-deploys</h3>
+  <p>Your changes go live automatically in 2-5 minutes.</p>
+  <p>Check: <code>app.fluence.lol</code> should now show the updated app with "Sign in with Google" button</p>
+</div>
+
+</section>
+
+<section>
+<h2>✅ Testing</h2>
+
+<div class="box">
+  <strong>Once deployed, test the flow:</strong>
+  <ol style="margin-left:20px;margin-top:10px">
+    <li>Visit <code>app.fluence.lol</code></li>
+    <li>Click "Sign in with Google"</li>
+    <li>Log in with a Google account (your Gmail or any Google account)</li>
+    <li>Fill in name, city, Instagram/YouTube (optional)</li>
+    <li>Click "Continue to Deals"</li>
+    <li>You should see mock deals (Cafe Mocha, FitHub Gym, etc.)</li>
+    <li>Reload page — you stay logged in (data saved in browser)</li>
+  </ol>
+</div>
+
+</section>
+
+<section>
+<h2>🎯 Next Steps</h2>
+
+<div class="box">
+  <p><strong>Once creators are signing in:</strong></p>
+  <ul style="margin-left:20px">
+    <li>Replace mock deals with real deals from your backend</li>
+    <li>Add Instagram/YouTube OAuth linking</li>
+    <li>Set up Google Sheets to store creator data permanently</li>
+    <li>Create brand signup & deal posting flow</li>
+  </ul>
+</div>
+
+</section>
+
+<section>
+<h2>❓ Troubleshooting</h2>
+
+<table>
+  <tr>
+    <th>Problem</th>
+    <th>Solution</th>
+  </tr>
+  <tr>
+    <td>"Sign in with Google" button doesn't appear</td>
+    <td>Check that firebaseConfig is valid (check browser console for errors)</td>
+  </tr>
+  <tr>
+    <td>Sign-in clicks but nothing happens</td>
+    <td>Check that Client ID is correctly pasted (no extra spaces)</td>
+  </tr>
+  <tr>
+    <td>"Origin not allowed" error</td>
+    <td>Add your domain to Google Cloud Console → Credentials → Authorized origins</td>
+  </tr>
+  <tr>
+    <td>Profile doesn't save after refresh</td>
+    <td>Normal for now — we're using browser localStorage. Real database coming next.</td>
+  </tr>
+</table>
+
+</section>
+
+<p style="text-align:center;margin-top:60px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:13px">
+  Fluence · fluence.lol · +91 88156 21916
+</p>
+
+</div>
+
+</body>
+</html>
