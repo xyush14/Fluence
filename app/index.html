@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>fluence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link href="https://api.iconify.design/lucide.css?icons=home,bar-chart-3,briefcase,store,user,bell,search,heart,map-pin,clock,users,instagram,youtube,arrow-up-right,check,circle,eye,zap,rocket,lock,star,send,bookmark,chevron-right,x,arrow-left,plus,filter,trending-up,camera,film,pen-tool,megaphone,palette,scissors" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<!-- ════════ Firebase + Google Sign-In ════════ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+/* ════════════════════════════════════════════════════════════
+   FLUENCE CONFIG — paste your keys here, then redeploy.
+   Leave blank to run in demo mode (any 6-digit OTP works).
+   ════════════════════════════════════════════════════════════ */
+window.FLUENCE = {
+  // ─── STEP 1: Paste your Apps Script /exec URL here ───
+  API_URL: "",
+
+  // ─── STEP 2: Paste your Firebase config here ───
+  FIREBASE_CONFIG: {
+    apiKey: "AIzaSyAdYXsBDlBgqCUgP6hO1X2Jqrpg29Ty6Q8",
+    authDomain: "fluence-30036.firebaseapp.com",
+    projectId: "fluence-30036",
+    storageBucket: "fluence-30036.firebasestorage.app",
+    messagingSenderId: "1067386355557",
+    appId: "1:1067386355557:web:7d3a9b43000276de45eb8c",
+  },
+
+  // ─── STEP 3: Paste your Google OAuth Client ID here ───
+  // Get it from console.cloud.google.com → APIs & Services → Credentials
+  GOOGLE_CLIENT_ID: "1067386355557-dkiaosg7fuc33au498rm5chprbgoet31.apps.googleusercontent.com",
+
+  BRAND_ONBOARD_URL: "https://forms.gle/zLsZM9Td3Q8gDw3Y6",
+};
+
+// Initialize Firebase only if config is pasted
+try {
+  const cfg = window.FLUENCE.FIREBASE_CONFIG;
+  if (cfg && cfg.apiKey) {
+    firebase.initializeApp(cfg);
+    window.FLUENCE.auth = firebase.auth();
+    window.FLUENCE.auth.languageCode = "en";
+    window.FLUENCE.firebaseReady = true;
+  }
+} catch (e) { console.warn("Firebase init skipped:", e.message); }
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root {
+  --white: #FFFFFF;
+  --bg: #FAFAF9;
+  --card: #FFFFFF;
+  --card-hover: #FEFEFE;
+  --border: #F0EDE8;
+  --border-2: #E8E4DE;
+  --muted: #F5F3F0;
+  --muted-2: #EDEAE5;
+
+  --ink: #1C1917;
+  --ink-2: #44403C;
+  --ink-3: #78716C;
+  --ink-4: #A8A29E;
+  --ink-5: #D6D3D1;
+
+  --flame: #E8553A;
+  --flame-soft: #FEF1EE;
+  --flame-hover: #D44A32;
+
+  --emerald: #059669;
+  --emerald-soft: #ECFDF5;
+  --sky: #0284C7;
+  --sky-soft: #F0F9FF;
+  --violet: #7C3AED;
+  --violet-soft: #F5F3FF;
+  --amber: #D97706;
+  --amber-soft: #FFFBEB;
+  --rose: #E11D48;
+  --rose-soft: #FFF1F2;
+
+  --font: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  --ease: cubic-bezier(.4,0,.2,1);
+}
+
+body {
+  font-family: var(--font);
+  background: #E8E4DE;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+.app {
+  max-width: 430px;
+  margin: 0 auto;
+  background: var(--bg);
+  min-height: 100vh;
+  position: relative;
+  box-shadow: 0 0 60px rgba(0,0,0,0.06);
+}
+
+.main { padding-bottom: 76px }
+
+/* ─────── HEADER ─────── */
+.hdr {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+  background: rgba(250,250,249,0.82);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+}
+.hdr-logo { display:flex; align-items:center; gap:8px }
+.hdr-logo svg { width:26px; height:26px }
+.hdr-logo span {
+  font-size: 18px; font-weight: 700; letter-spacing: -0.6px; color: var(--ink);
+}
+.hdr-actions { display:flex; gap:4px }
+.icon-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: transparent; border: 1.5px solid var(--border-2);
+  cursor: pointer; transition: all 160ms var(--ease);
+  position: relative; color: var(--ink-3);
+}
+.icon-btn:hover { background: var(--muted); color: var(--ink-2) }
+.icon-btn:active { transform: scale(0.92) }
+.icon-btn svg { width:18px; height:18px; stroke-width:1.8 }
+.badge-dot {
+  position:absolute; top:7px; right:7px;
+  width:7px; height:7px; border-radius:50%;
+  background:var(--flame); border:2px solid var(--bg);
+}
+
+/* ─────── BOTTOM NAV ─────── */
+.bnav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px; z-index: 50;
+  display: flex; padding: 6px 12px 10px;
+  background: rgba(255,255,255,0.86);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-top: 1px solid var(--border);
+}
+.bnav button {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 0; background: none; border: none; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.bnav button svg { width:20px; height:20px; stroke-width:1.7; color:var(--ink-5); transition:color 160ms var(--ease) }
+.bnav button .bl { font-size:10px; font-weight:600; color:var(--ink-4); letter-spacing:0.1px; transition:color 160ms var(--ease) }
+.bnav button.on svg { color:var(--flame); stroke-width:2 }
+.bnav button.on .bl { color:var(--flame); font-weight:700 }
+
+/* ─────── TYPOGRAPHY ─────── */
+.page-head { padding: 20px 20px 6px }
+.page-head h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.8px; line-height: 1.15; color: var(--ink) }
+.page-head p { font-size: 14px; color: var(--ink-3); margin-top: 4px; font-weight: 400 }
+.section-label {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 20px 10px;
+}
+.section-label h2 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; color: var(--ink) }
+.section-label button { font-size:12px; font-weight:600; color:var(--flame); background:none; border:none; cursor:pointer; font-family:var(--font) }
+
+/* ─────── SEARCH ─────── */
+.search-wrap { padding: 6px 20px 8px }
+.search-box {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 14px; height: 44px;
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r-md); transition: all 160ms var(--ease);
+}
+.search-box:focus-within { border-color: var(--flame); box-shadow: 0 0 0 3px var(--flame-soft) }
+.search-box svg { width:17px; height:17px; color:var(--ink-4); flex-shrink:0; stroke-width:1.8 }
+.search-box input {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-size: 14px; font-family: var(--font); color: var(--ink);
+}
+.search-box input::placeholder { color: var(--ink-4) }
+
+/* ─────── CHIPS ─────── */
+.chip-row { display:flex; gap:7px; padding:4px 20px 12px; overflow-x:auto; scrollbar-width:none }
+.chip-row::-webkit-scrollbar { display:none }
+.chip-btn {
+  flex-shrink: 0; padding: 6px 12px; line-height: 1.15;
+  border-radius: 9px; font-size: 12.5px; font-weight: 500;
+  border: 1px solid var(--border-2); background: var(--card);
+  color: var(--ink-2); cursor: pointer; transition: all 160ms var(--ease);
+  font-family: var(--font); white-space: nowrap;
+  letter-spacing: -0.005em;
+  -webkit-tap-highlight-color: transparent;
+}
+.chip-btn:active { transform: scale(0.96) }
+.chip-btn.on {
+  background: var(--ink); color: var(--white); border-color: var(--ink);
+}
+
+/* ─────── SIGNAL STRIP ─────── */
+.signal-strip {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 20px 14px; padding: 11px 14px;
+  background: var(--flame-soft); border-radius: var(--r-md);
+  font-size: 13px; font-weight: 500; color: var(--flame);
+  border: 1px solid rgba(232,85,58,0.08);
+}
+.signal-strip svg { width:16px; height:16px; flex-shrink:0; stroke-width:2 }
+
+/* ─────── DEAL CARD ─────── */
+.deal-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r-xl); margin: 0 20px 14px;
+  overflow: hidden; cursor: pointer;
+  transition: all 200ms var(--ease);
+}
+.deal-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.05); border-color: var(--border-2) }
+.deal-card:active { transform: scale(0.985) }
+.dc-cover {
+  position: relative; width: 100%; height: 170px; overflow: hidden;
+}
+.dc-cover img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform 400ms var(--ease);
+}
+.deal-card:hover .dc-cover img { transform: scale(1.02) }
+.dc-cover-grad {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 60px;
+  background: linear-gradient(to top, rgba(0,0,0,0.35), transparent);
+}
+.dc-badge {
+  position: absolute; top: 12px; left: 12px;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase; backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.dc-badge-new { background: rgba(5,150,105,0.14); color: var(--emerald) }
+.dc-badge-hot { background: rgba(225,29,72,0.14); color: var(--rose) }
+.dc-badge-closing { background: rgba(217,119,6,0.14); color: var(--amber) }
+
+.dc-save {
+  position: absolute; top: 12px; right: 12px;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(255,255,255,0.8); backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: grid; place-items: center; border: none; cursor: pointer;
+}
+.dc-save svg { width:16px; height:16px; color:var(--ink-3); stroke-width:1.8 }
+.dc-save.saved svg { color:var(--flame); fill:var(--flame) }
+
+.dc-body { padding: 14px 16px 14px }
+.dc-brand-row { display:flex; align-items:center; gap:10px; margin-bottom:10px }
+.dc-brand-img {
+  width: 32px; height: 32px; border-radius: 8px;
+  object-fit: cover; border: 1px solid var(--border);
+}
+.dc-brand-name { font-size: 13px; font-weight: 600; color: var(--ink); letter-spacing: -0.1px }
+.dc-brand-type { font-size: 11.5px; color: var(--ink-4); font-weight: 400 }
+.dc-title {
+  font-size: 16px; font-weight: 700; letter-spacing: -0.4px;
+  line-height: 1.35; margin-bottom: 10px; color: var(--ink);
+}
+.dc-meta { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px }
+.dc-meta-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px; background: var(--muted); border-radius: 6px;
+  font-size: 11px; font-weight: 500; color: var(--ink-3);
+}
+.dc-meta-tag svg { width:12px; height:12px; stroke-width:1.8 }
+
+.dc-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 12px; border-top: 1px solid var(--border);
+}
+.dc-pay { font-size: 17px; font-weight: 700; color: var(--emerald); letter-spacing: -0.5px }
+.dc-pay span { font-size: 12px; font-weight: 400; color: var(--ink-4) }
+.dc-apply {
+  padding: 9px 20px; border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: var(--font); border: none;
+  transition: all 160ms var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.dc-apply:active { transform: scale(0.94) }
+.dc-apply-active { background: var(--flame); color: var(--white) }
+.dc-apply-active:hover { background: var(--flame-hover) }
+.dc-apply-done { background: var(--muted); color: var(--ink-4); border: 1px solid var(--border-2) }
+
+/* ─────── STAT CARD ─────── */
+.stat-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 20px; margin-bottom:12px }
+.stat-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r-lg); padding: 15px;
+}
+.stat-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px }
+.stat-label { font-size: 12px; color: var(--ink-3); font-weight: 500 }
+.stat-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: grid; place-items: center;
+}
+.stat-icon svg { width:15px; height:15px; stroke-width:1.8 }
+.stat-val { font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1 }
+.stat-delta { display:flex; align-items:center; gap:3px; font-size:11.5px; font-weight:600; margin-top:5px }
+.stat-delta svg { width:13px; height:13px }
+.delta-up { color: var(--emerald) }
+
+/* ─────── GAUGE ─────── */
+.gauge-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r-lg); padding: 20px; margin: 0 20px 12px;
+  text-align: center;
+}
+.gauge-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.2px }
+.gauge-wrap { width:148px; height:148px; margin:0 auto 18px; position:relative }
+.gauge-wrap svg { transform:rotate(-90deg) }
+.gauge-center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center }
+.gauge-num { font-size: 36px; font-weight: 700; letter-spacing: -1.5px; color: var(--flame) }
+.gauge-sub { font-size: 11px; font-weight: 600; color: var(--ink-4); text-transform:uppercase; letter-spacing:0.5px }
+.checklist { display:flex; flex-direction:column; gap:5px; margin-top:16px }
+.check-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; background: var(--muted); border-radius: var(--r-sm);
+  font-size: 13px; font-weight: 500; color: var(--ink-2);
+}
+.check-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.check-dot svg { width:12px; height:12px; stroke-width:2.5 }
+.check-ok { background: var(--emerald-soft); color: var(--emerald) }
+.check-no { background: var(--white); border: 1.5px solid var(--border-2); color: var(--ink-5) }
+
+/* ─────── BRAND VIEWS ─────── */
+.bv-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r-lg); margin: 0 20px 12px; overflow: hidden;
+}
+.bv-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px; border-bottom: 1px solid var(--border);
+  transition: background 100ms var(--ease);
+}
+.bv-item:last-child { border-bottom: none }
+.bv-item:hover { background: rgba(0,0,0,0.01) }
+.bv-img { width:38px; height:38px; border-radius:50%; object-fit:cover; border:1px solid var(--border) }
+.bv-info { flex:1 }
+.bv-name { font-size:13px; font-weight:600; color:var(--ink); letter-spacing:-0.1px }
+.bv-action { font-size:11.5px; color:var(--ink-4) }
+.bv-time { font-size:11px; color:var(--ink-5); font-weight:500 }
+.blurred { filter:blur(4px); pointer-events:none; user-select:none }
+
+/* ─────── PRO BANNER ─────── */
+.pro-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 0 20px 12px; padding: 16px;
+  background: var(--ink); border-radius: var(--r-lg); color: var(--white);
+}
+.pro-bar h3 { font-size:14px; font-weight:600; margin-bottom:2px }
+.pro-bar p { font-size:12px; color:var(--ink-4) }
+.pro-cta {
+  padding: 8px 16px; background: var(--flame); color: var(--white);
+  border: none; border-radius: var(--r-pill); font-size: 12px;
+  font-weight: 600; cursor: pointer; font-family: var(--font); white-space:nowrap;
+}
+
+/* ─────── RISING ─────── */
+.rising-bar {
+  display: flex; gap: 12px; align-items: center;
+  margin: 0 20px 12px; padding: 14px 16px;
+  background: linear-gradient(135deg, var(--flame) 0%, #F97316 100%);
+  border-radius: var(--r-lg); color: var(--white);
+}
+.rising-bar svg { width:22px; height:22px; flex-shrink:0; stroke-width:2 }
+.rising-bar h3 { font-size:14px; font-weight:600; margin-bottom:2px }
+.rising-bar p { font-size:12px; opacity:0.8; line-height:1.4 }
+
+/* ─────── MY DEALS ─────── */
+.tab-bar { display:flex; padding:0 20px; border-bottom:1px solid var(--border); margin-bottom:14px }
+.tab-btn {
+  padding: 10px 0; margin-right: 20px;
+  font-size: 13px; font-weight: 600; color: var(--ink-4);
+  border: none; background: none; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 160ms var(--ease); font-family: var(--font);
+}
+.tab-btn.on { color: var(--ink); border-bottom-color: var(--flame) }
+.tab-btn .tab-c {
+  display: inline-block; padding: 1px 6px; border-radius: var(--r-pill);
+  background: var(--muted); font-size: 10px; font-weight: 700; margin-left: 4px;
+}
+.tab-btn.on .tab-c { background: var(--flame-soft); color: var(--flame) }
+
+.deal-track {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r-lg); margin: 0 20px 10px; padding: 14px 16px;
+}
+.dt-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px }
+.dt-brand { display:flex; gap:10px; align-items:center }
+.dt-img { width:34px; height:34px; border-radius:8px; object-fit:cover; border:1px solid var(--border) }
+.dt-name { font-size:13.5px; font-weight:600; letter-spacing:-0.2px }
+.dt-deal { font-size:11.5px; color:var(--ink-4) }
+.status-pill { padding:4px 10px; border-radius:var(--r-pill); font-size:10.5px; font-weight:600 }
+.st-applied { background:var(--sky-soft); color:var(--sky) }
+.st-inprogress { background:var(--amber-soft); color:var(--amber) }
+.st-completed { background:var(--emerald-soft); color:var(--emerald) }
+.progress-track { height:3px; background:var(--muted); border-radius:2px; margin:6px 0; overflow:hidden }
+.progress-fill { height:100%; border-radius:2px; transition:width 400ms var(--ease) }
+.dt-foot { display:flex; justify-content:space-between; font-size:12px; color:var(--ink-4) }
+.dt-foot .earn { font-weight:700; color:var(--emerald) }
+
+/* ─────── SERVICES ─────── */
+.svc-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 20px; margin-bottom:14px }
+.svc-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r-lg); overflow: hidden; cursor: pointer;
+  transition: all 200ms var(--ease);
+}
+.svc-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.04); border-color: var(--border-2) }
+.svc-card:active { transform: scale(0.97) }
+.svc-img { width:100%; height:96px; object-fit:cover; display:block }
+.svc-body { padding: 12px 12px 14px }
+.svc-body h3 { font-size:13.5px; font-weight:700; margin-bottom:2px; letter-spacing:-0.2px }
+.svc-body p { font-size:11px; color:var(--ink-4); line-height:1.4; margin-bottom:8px }
+.svc-price { font-size:14px; font-weight:700; color:var(--ink) }
+.svc-price span { font-size:11px; font-weight:400; color:var(--ink-4) }
+
+/* ─────── PROFILE ─────── */
+.prof-header {
+  text-align: center; padding: 28px 20px 22px;
+  background: var(--card); border-bottom: 1px solid var(--border);
+}
+.prof-avatar {
+  width: 82px; height: 82px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--flame), #F97316);
+  display: grid; place-items: center;
+  font-size: 32px; font-weight: 700; color: var(--white);
+  margin: 0 auto 14px;
+  box-shadow: 0 6px 20px rgba(232,85,58,0.2);
+}
+.prof-name { font-size: 22px; font-weight: 700; letter-spacing: -0.6px; margin-bottom: 3px }
+.prof-handle { font-size: 13px; color: var(--ink-3); margin-bottom: 10px }
+.prof-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 14px; background: var(--flame-soft);
+  color: var(--flame); border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 600; margin-bottom: 18px;
+}
+.prof-badge svg { width:13px; height:13px; stroke-width:2 }
+.prof-numbers { display:flex; justify-content:center; gap:30px }
+.pn-item { text-align:center }
+.pn-val { font-size:18px; font-weight:700; letter-spacing:-0.5px }
+.pn-label { font-size:11px; color:var(--ink-4); font-weight:500; margin-top:1px }
+.prof-section { padding:18px 20px; border-bottom:1px solid var(--border) }
+.prof-section h3 { font-size:13px; font-weight:700; letter-spacing:-0.1px; margin-bottom:10px; color:var(--ink) }
+.tag-grid { display:flex; flex-wrap:wrap; gap:6px }
+.tag-chip { padding:5px 12px; background:var(--muted); border-radius:var(--r-pill); font-size:12px; font-weight:500; color:var(--ink-2) }
+.social-row { display:flex; gap:8px; flex-wrap:wrap }
+.social-chip { display:flex; align-items:center; gap:6px; padding:8px 14px; background:var(--muted); border-radius:var(--r-sm); font-size:12.5px; font-weight:600 }
+.social-chip svg { width:14px; height:14px; stroke-width:1.8 }
+.social-chip .scount { color:var(--ink-4); font-weight:400 }
+.rate-table { border:1.5px solid var(--border); border-radius:var(--r-md); overflow:hidden }
+.rate-row { display:flex; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--border); font-size:13px }
+.rate-row:last-child { border-bottom:none }
+.rate-row .rl { color:var(--ink-3); font-weight:400 }
+.rate-row .rv { font-weight:700 }
+.collab-list {}
+.cl-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border) }
+.cl-item:last-child { border-bottom:none }
+.cl-img { width:34px; height:34px; border-radius:8px; object-fit:cover; border:1px solid var(--border) }
+.cl-name { font-size:13px; font-weight:600 }
+.cl-desc { font-size:11px; color:var(--ink-4) }
+.prof-actions { display:flex; gap:8px; padding:18px 20px }
+.prof-btn {
+  flex:1; padding:12px; border-radius:var(--r-md); font-size:13px;
+  font-weight:600; cursor:pointer; font-family:var(--font);
+  text-align:center; transition:all 160ms var(--ease);
+}
+.prof-btn:active { transform:scale(0.96) }
+.prof-btn-ghost { background:var(--card); border:1.5px solid var(--border-2); color:var(--ink) }
+.prof-btn-solid { background:var(--ink); border:none; color:var(--white) }
+
+/* ─────── NOTIFS ─────── */
+.notif-list {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r-lg); margin: 0 20px; overflow: hidden;
+}
+.notif-item {
+  display: flex; gap: 12px; padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background 100ms var(--ease);
+}
+.notif-item:last-child { border-bottom:none }
+.notif-item:hover { background: rgba(0,0,0,0.01) }
+.notif-item.unread { background: var(--flame-soft) }
+.ni-icon {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 17px; flex-shrink: 0;
+}
+.ni-body { flex: 1 }
+.ni-body p { font-size: 13px; line-height: 1.45; color: var(--ink-2) }
+.ni-body p strong { font-weight: 600; color: var(--ink) }
+.ni-body .ni-time { font-size: 11px; color: var(--ink-5); margin-top: 3px }
+.ni-dot { width:7px; height:7px; background:var(--flame); border-radius:50%; flex-shrink:0; margin-top:6px }
+
+/* ─────── OVERLAY ─────── */
+.overlay { position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; height:100vh; z-index:200 }
+.ov-backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.4) }
+.ov-sheet {
+  position:absolute; bottom:0; left:0; right:0;
+  background:var(--card); border-radius:var(--r-xl) var(--r-xl) 0 0;
+  max-height:88vh; overflow-y:auto;
+  animation: slideUp 300ms var(--ease);
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.ov-handle { width:36px; height:4px; background:var(--border-2); border-radius:2px; margin:10px auto }
+.ov-cover { width:100%; height:180px; object-fit:cover; border-radius:0 0 var(--r-md) var(--r-md) }
+.ov-body { padding:0 22px 28px }
+.ov-brand-row { display:flex; gap:10px; align-items:center; margin:16px 0 }
+.ov-brand-img { width:42px; height:42px; border-radius:10px; object-fit:cover; border:1px solid var(--border) }
+.ov-brand-name { font-size:15px; font-weight:700 }
+.ov-brand-type { font-size:12px; color:var(--ink-4) }
+.ov-title { font-size:20px; font-weight:700; letter-spacing:-0.6px; line-height:1.3; margin-bottom:16px }
+.ov-section { margin-bottom:16px }
+.ov-section h4 { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-4); margin-bottom:5px }
+.ov-section p { font-size:14px; line-height:1.65; color:var(--ink-2) }
+.ov-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px }
+.ov-stat-box { background:var(--muted); border-radius:var(--r-sm); padding:12px }
+.ov-stat-box .osl { font-size:10px; color:var(--ink-4); font-weight:600; text-transform:uppercase; letter-spacing:0.3px; margin-bottom:3px }
+.ov-stat-box .osv { font-size:18px; font-weight:700; letter-spacing:-0.5px }
+.apply-full {
+  width:100%; padding:15px; background:var(--flame); color:var(--white);
+  border:none; border-radius:var(--r-md); font-size:15px; font-weight:700;
+  cursor:pointer; font-family:var(--font); margin-top:8px;
+  transition:all 160ms var(--ease);
+}
+.apply-full:hover { background:var(--flame-hover) }
+.apply-full:active { transform:scale(0.97) }
+
+/* ─────── EMPTY ─────── */
+.empty { text-align:center; padding:48px 32px }
+.empty svg { width:48px; height:48px; color:var(--ink-5); margin-bottom:14px; stroke-width:1.2 }
+.empty h3 { font-size:16px; font-weight:600; margin-bottom:6px }
+.empty p { font-size:13px; color:var(--ink-4) }
+
+/* ─────── ANIMATION ─────── */
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.fade-in { animation: fadeIn 350ms var(--ease) both }
+
+/* ─────── TOAST ─────── */
+.toast-wrap { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; max-width: 420px; width: calc(100% - 40px) }
+.toast { background: #1C1917; color: #fff; padding: 13px 18px; border-radius: 12px; font-size: 13.5px; font-weight: 500; letter-spacing: -0.005em; box-shadow: 0 12px 30px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 10px; animation: toastIn 280ms var(--ease) both; pointer-events: auto; line-height: 1.4 }
+.toast.success { background: linear-gradient(135deg, #10B981, #059669) }
+.toast.info    { background: linear-gradient(135deg, #1C1917, #44403C) }
+.toast.warn    { background: linear-gradient(135deg, #F59E0B, #D97706) }
+.toast.err     { background: linear-gradient(135deg, #DC2626, #991B1B) }
+.toast svg { width: 18px; height: 18px; flex-shrink: 0 }
+@keyframes toastIn { from{opacity:0;transform:translateY(20px) scale(0.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+/* ─────── LOADING ─────── */
+.loading-row { display: flex; align-items: center; justify-content: center; padding: 40px 0; color: var(--ink-4); font-size: 14px; gap: 10px }
+.spinner { width: 18px; height: 18px; border: 2px solid var(--muted); border-top-color: var(--flame); border-radius: 50%; animation: spin 700ms linear infinite }
+@keyframes spin { to { transform: rotate(360deg) } }
+
+/* ─────── MODAL (generic) ─────── */
+.modal-back { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 200ms ease }
+.modal { background: #fff; border-radius: 20px; padding: 28px 24px; max-width: 380px; width: 100%; box-shadow: 0 30px 60px rgba(0,0,0,0.3); animation: popIn 320ms cubic-bezier(0.34,1.56,0.64,1) }
+.modal h3 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px }
+.modal p { font-size: 14px; color: var(--ink-3); line-height: 1.5; margin-bottom: 20px }
+
+/* ─────── AUTH / LOGIN ─────── */
+.auth-screen {
+  min-height: 100vh; background: #FAFAF9; display: flex; flex-direction: column;
+  padding: 28px 24px 32px; position: relative; overflow: hidden;
+}
+.auth-screen::before {
+  content:""; position:absolute; top:-120px; right:-120px; width:380px; height:380px;
+  background: radial-gradient(circle, rgba(232,85,58,0.12), transparent 70%);
+  border-radius: 50%; pointer-events: none;
+}
+.auth-screen::after {
+  content:""; position:absolute; bottom:-160px; left:-160px; width:420px; height:420px;
+  background: radial-gradient(circle, rgba(139,92,246,0.08), transparent 70%);
+  border-radius: 50%; pointer-events: none;
+}
+.auth-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 48px; z-index: 1 }
+.auth-logo-mark { width: 38px; height: 38px; border-radius: 10px; background: #E8553A; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 22px; box-shadow: 0 8px 20px rgba(232,85,58,0.25) }
+.auth-logo-text { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #1C1917 }
+
+.auth-content { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; z-index: 1 }
+.auth-title { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; color: #1C1917; margin-bottom: 10px }
+.auth-sub { font-size: 15px; color: #78716C; line-height: 1.5; margin-bottom: 32px }
+
+.phone-row { display: flex; gap: 10px; margin-bottom: 16px }
+.phone-cc {
+  display: flex; align-items: center; justify-content: center;
+  width: 72px; height: 56px; border-radius: 14px;
+  background: #fff; border: 1.5px solid #E7E5E4;
+  font-size: 15px; font-weight: 600; color: #1C1917; letter-spacing: -0.01em;
+}
+.phone-input {
+  flex: 1; height: 56px; border-radius: 14px; background: #fff;
+  border: 1.5px solid #E7E5E4; padding: 0 18px;
+  font-size: 17px; font-weight: 500; font-family: inherit; letter-spacing: 0.02em;
+  color: #1C1917; outline: none; transition: all 160ms ease;
+}
+.phone-input:focus, .phone-cc:focus-within { border-color: #E8553A; box-shadow: 0 0 0 4px rgba(232,85,58,0.08) }
+.phone-input::placeholder { color: #A8A29E; font-weight: 500 }
+
+.auth-help { font-size: 12.5px; color: #A8A29E; display: flex; align-items: center; gap: 6px; margin-bottom: 24px }
+.auth-help svg { width: 14px; height: 14px; color: #10B981 }
+
+.auth-btn {
+  width: 100%; height: 56px; border-radius: 14px;
+  background: #1C1917; color: #fff; border: none; font-size: 16px; font-weight: 600;
+  font-family: inherit; cursor: pointer; letter-spacing: -0.01em;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 180ms ease; box-shadow: 0 8px 20px rgba(28,25,23,0.15);
+}
+.auth-btn:disabled { background: #D6D3D1; color: #A8A29E; box-shadow: none; cursor: not-allowed }
+.auth-btn:not(:disabled):active { transform: scale(0.98) }
+.auth-btn.accent { background: #E8553A; box-shadow: 0 8px 20px rgba(232,85,58,0.30) }
+
+.otp-row { display: flex; gap: 10px; margin-bottom: 20px; justify-content: space-between }
+.otp-cell {
+  flex: 1; aspect-ratio: 1/1.15; max-width: 54px; border-radius: 12px;
+  background: #fff; border: 1.5px solid #E7E5E4;
+  font-size: 22px; font-weight: 700; text-align: center; color: #1C1917;
+  font-family: inherit; outline: none; transition: all 160ms ease;
+}
+.otp-cell:focus, .otp-cell.filled { border-color: #1C1917; box-shadow: 0 0 0 4px rgba(28,25,23,0.06) }
+
+.auth-timer { font-size: 13px; color: #78716C; text-align: center; margin-bottom: 24px }
+.auth-timer strong { color: #1C1917 }
+.auth-resend { background: none; border: none; color: #E8553A; font-weight: 600; font-family: inherit; font-size: 13px; cursor: pointer; padding: 0 }
+.auth-resend:disabled { color: #A8A29E; cursor: not-allowed }
+
+.auth-back { width: 40px; height: 40px; border-radius: 12px; background: #fff; border: 1px solid #E7E5E4; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-bottom: 24px; color: #1C1917 }
+.auth-back:active { transform: scale(0.96) }
+
+.auth-foot { text-align: center; font-size: 12px; color: #A8A29E; line-height: 1.6; z-index: 1; margin-top: 16px }
+.auth-foot a, .auth-foot span { color: #1C1917; font-weight: 600 }
+
+/* splash */
+.splash { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 1 }
+.splash-logo { width: 88px; height: 88px; border-radius: 22px; background: #E8553A; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 46px; margin-bottom: 28px; box-shadow: 0 20px 50px rgba(232,85,58,0.35); animation: popIn 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both }
+@keyframes popIn { 0% { transform: scale(0); opacity: 0 } 70% { transform: scale(1.08) } 100% { transform: scale(1); opacity: 1 } }
+.splash-title { font-size: 42px; font-weight: 700; letter-spacing: -0.035em; line-height: 1; color: #1C1917; margin-bottom: 12px }
+.splash-sub { font-size: 16px; color: #78716C; line-height: 1.5; max-width: 280px; margin: 0 auto 40px }
+.splash-cta { width: 100%; max-width: 360px }
+
+/* profile setup */
+.ps-avatar-picker { width: 96px; height: 96px; border-radius: 50%; background: #F5F5F4; border: 2px dashed #D6D3D1; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; color: #A8A29E; font-size: 12px; font-weight: 600; cursor: pointer }
+.ps-avatar-picker.filled { background: linear-gradient(135deg, #E8553A, #F97316); border: none; color: #fff; font-size: 40px; font-weight: 700 }
+.ps-field { margin-bottom: 16px }
+.ps-label { font-size: 13px; font-weight: 600; color: #1C1917; margin-bottom: 7px; display: block; letter-spacing: -0.005em }
+.ps-input { width: 100%; height: 52px; border-radius: 12px; background: #fff; border: 1.5px solid #E7E5E4; padding: 0 16px; font-size: 15px; font-family: inherit; color: #1C1917; outline: none; transition: all 160ms ease }
+.ps-input:focus { border-color: #E8553A; box-shadow: 0 0 0 4px rgba(232,85,58,0.08) }
+.ps-niches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px }
+.ps-niche { padding: 7px 13px; border-radius: 9px; background: #fff; border: 1.5px solid #E7E5E4; font-size: 13px; font-weight: 500; color: #44403C; cursor: pointer; transition: all 160ms ease; font-family: inherit }
+.ps-niche.on { background: #1C1917; color: #fff; border-color: #1C1917 }
+.ps-textarea { width: 100%; min-height: 90px; border-radius: 12px; background: #fff; border: 1.5px solid #E7E5E4; padding: 14px 16px; font-size: 15px; font-family: inherit; color: #1C1917; outline: none; resize: vertical; line-height: 1.5 }
+.ps-textarea:focus { border-color: #E8553A; box-shadow: 0 0 0 4px rgba(232,85,58,0.08) }
+.ps-checkbox { display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: var(--muted); border-radius: var(--r-sm); cursor: pointer; font-size: 13px; line-height: 1.5; margin-top: 8px }
+.ps-checkbox input { margin-top: 2px; accent-color: var(--flame); width: 16px; height: 16px; flex-shrink: 0 }
+.ps-checkbox span a { color: var(--flame); font-weight: 600 }
+
+/* ─────── STEPPER ─────── */
+.stepper { display: flex; gap: 6px; margin-bottom: 24px; padding: 0 4px }
+.step-pip { flex: 1; height: 4px; border-radius: 2px; background: var(--muted-2); transition: background 280ms var(--ease) }
+.step-pip.on { background: var(--flame) }
+.step-count { font-size: 12px; font-weight: 600; color: var(--ink-4); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px }
+
+/* ─────── EARNINGS ─────── */
+.wallet-card {
+  margin: 14px 20px; padding: 20px;
+  background: linear-gradient(135deg, #1C1917 0%, #292524 100%);
+  color: #fff; border-radius: var(--r-xl);
+  position: relative; overflow: hidden;
+}
+.wallet-card::before {
+  content: ""; position: absolute; top: -40px; right: -40px;
+  width: 160px; height: 160px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,85,58,0.35), transparent 60%);
+  pointer-events: none;
+}
+.wallet-label { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 0.3px; margin-bottom: 6px; position: relative }
+.wallet-amount { font-size: 38px; font-weight: 700; letter-spacing: -1.2px; line-height: 1; margin-bottom: 4px; position: relative }
+.wallet-sub { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 18px; position: relative }
+.wallet-actions { display: flex; gap: 8px; position: relative }
+.wallet-btn {
+  flex: 1; padding: 11px; border-radius: var(--r-md); font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: var(--font);
+  border: none; transition: all 160ms var(--ease);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.wallet-btn svg { width: 14px; height: 14px; stroke-width: 2 }
+.wallet-btn.primary { background: var(--flame); color: #fff }
+.wallet-btn.ghost { background: rgba(255,255,255,0.08); color: #fff; backdrop-filter: blur(6px) }
+.wallet-btn:active { transform: scale(0.97) }
+
+.earn-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 0 20px; margin-bottom: 18px }
+.earn-sum-card { background: var(--card); border: 1.5px solid var(--border); border-radius: var(--r-md); padding: 12px; text-align: center }
+.earn-sum-label { font-size: 10.5px; font-weight: 600; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px }
+.earn-sum-val { font-size: 16px; font-weight: 700; letter-spacing: -0.4px }
+
+.txn-list { background: var(--card); border: 1.5px solid var(--border); border-radius: var(--r-lg); margin: 0 20px 14px; overflow: hidden }
+.txn-item { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--border) }
+.txn-item:last-child { border-bottom: none }
+.txn-icon { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0 }
+.txn-icon svg { width: 15px; height: 15px; stroke-width: 2 }
+.txn-icon.credit { background: var(--emerald-soft); color: var(--emerald) }
+.txn-icon.debit  { background: var(--rose-soft); color: var(--rose) }
+.txn-icon.pending { background: var(--amber-soft); color: var(--amber) }
+.txn-body { flex: 1; min-width: 0 }
+.txn-title { font-size: 13px; font-weight: 600; letter-spacing: -0.1px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.txn-date { font-size: 11px; color: var(--ink-4); margin-top: 2px }
+.txn-amt { font-size: 14px; font-weight: 700; letter-spacing: -0.3px }
+.txn-amt.pos { color: var(--emerald) }
+.txn-amt.neg { color: var(--rose) }
+.txn-amt.pending { color: var(--amber) }
+
+/* ─────── WITHDRAW SHEET ─────── */
+.sheet-inner { padding: 0 22px 28px }
+.sheet-title { font-size: 22px; font-weight: 700; letter-spacing: -0.6px; margin: 8px 0 6px }
+.sheet-sub { font-size: 13.5px; color: var(--ink-3); line-height: 1.5; margin-bottom: 20px }
+.upi-hero { background: var(--muted); border-radius: var(--r-md); padding: 14px; margin-bottom: 16px; font-size: 13px }
+.upi-hero-label { font-size: 11px; color: var(--ink-4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px }
+.upi-hero-val { font-size: 15px; font-weight: 700; font-family: "SF Mono", "Courier New", monospace; letter-spacing: -0.2px }
+.amount-input {
+  width: 100%; height: 72px; border: 1.5px solid var(--border-2);
+  border-radius: var(--r-md); padding: 0 16px; font-size: 36px;
+  font-weight: 700; text-align: center; color: var(--ink);
+  font-family: inherit; outline: none; letter-spacing: -1px;
+  margin-bottom: 10px;
+}
+.amount-input:focus { border-color: var(--flame); box-shadow: 0 0 0 4px rgba(232,85,58,0.08) }
+.amount-chips { display: flex; gap: 8px; margin-bottom: 18px }
+.amount-chip { flex: 1; padding: 10px; background: var(--muted); border: 1.5px solid transparent; border-radius: var(--r-sm); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; color: var(--ink-2) }
+.amount-chip:active { transform: scale(0.96) }
+
+/* ─────── INBOX ─────── */
+.thread-list { background: var(--card); border: 1.5px solid var(--border); border-radius: var(--r-lg); margin: 0 20px; overflow: hidden }
+.thread-item { display: flex; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 120ms var(--ease) }
+.thread-item:last-child { border-bottom: none }
+.thread-item:hover { background: rgba(0,0,0,0.01) }
+.thread-item:active { background: var(--muted) }
+.thread-item.unread { background: var(--flame-soft) }
+.thread-img { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0 }
+.thread-body { flex: 1; min-width: 0 }
+.thread-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px }
+.thread-name { font-size: 13.5px; font-weight: 700; color: var(--ink); letter-spacing: -0.1px }
+.thread-time { font-size: 10.5px; color: var(--ink-4); font-weight: 500; flex-shrink: 0; margin-left: 8px }
+.thread-last { font-size: 12.5px; color: var(--ink-3); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.thread-item.unread .thread-last { color: var(--ink); font-weight: 500 }
+.thread-badge { background: var(--flame); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: var(--r-pill); margin-left: 6px }
+
+/* ─────── CHAT SHEET ─────── */
+.chat-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); background: var(--card); position: sticky; top: 0; z-index: 10 }
+.chat-img { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border) }
+.chat-name { font-size: 14px; font-weight: 700; letter-spacing: -0.1px }
+.chat-meta { font-size: 11px; color: var(--ink-4) }
+.chat-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; min-height: 300px }
+.bubble { max-width: 78%; padding: 10px 14px; border-radius: var(--r-md); font-size: 13.5px; line-height: 1.45 }
+.bubble.me { align-self: flex-end; background: var(--flame); color: #fff; border-bottom-right-radius: 4px }
+.bubble.them { align-self: flex-start; background: var(--muted); color: var(--ink); border-bottom-left-radius: 4px }
+.bubble-time { font-size: 10px; margin-top: 2px; opacity: 0.6 }
+.chat-compose { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--card); position: sticky; bottom: 0 }
+.chat-compose input { flex: 1; height: 42px; border-radius: var(--r-pill); border: 1.5px solid var(--border); background: var(--bg); padding: 0 16px; font-size: 14px; font-family: inherit; outline: none }
+.chat-compose input:focus { border-color: var(--flame) }
+.chat-send-btn { width: 42px; height: 42px; border-radius: 50%; background: var(--flame); color: #fff; border: none; display: grid; place-items: center; cursor: pointer; flex-shrink: 0 }
+.chat-send-btn svg { width: 16px; height: 16px; stroke-width: 2 }
+.chat-send-btn:active { transform: scale(0.94) }
+
+/* ─────── WORKFLOW TIMELINE ─────── */
+.wf-timeline { padding: 0 22px 24px; position: relative }
+.wf-step { display: flex; gap: 14px; position: relative; padding-bottom: 22px }
+.wf-step:last-child { padding-bottom: 0 }
+.wf-step::before {
+  content: ""; position: absolute; left: 13px; top: 32px; bottom: -4px;
+  width: 2px; background: var(--border-2);
+}
+.wf-step:last-child::before { display: none }
+.wf-step.done::before { background: var(--emerald) }
+.wf-dot {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  display: grid; place-items: center; font-size: 12px; font-weight: 700;
+  background: var(--muted); color: var(--ink-4); border: 2px solid var(--border-2);
+  z-index: 1; position: relative;
+}
+.wf-dot svg { width: 12px; height: 12px; stroke-width: 3 }
+.wf-step.done .wf-dot { background: var(--emerald); color: #fff; border-color: var(--emerald) }
+.wf-step.current .wf-dot { background: var(--flame); color: #fff; border-color: var(--flame); box-shadow: 0 0 0 5px var(--flame-soft) }
+.wf-body { flex: 1; padding-top: 2px }
+.wf-title { font-size: 14px; font-weight: 700; letter-spacing: -0.2px; color: var(--ink); margin-bottom: 3px }
+.wf-step:not(.done):not(.current) .wf-title { color: var(--ink-4) }
+.wf-desc { font-size: 12px; color: var(--ink-3); line-height: 1.45 }
+.wf-action {
+  margin-top: 8px; padding: 8px 14px; border-radius: var(--r-pill);
+  background: var(--flame); color: #fff; border: none; font-size: 12px;
+  font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.wf-action.ghost { background: transparent; border: 1.5px solid var(--border-2); color: var(--ink-2) }
+.wf-action:active { transform: scale(0.96) }
+
+/* ─────── RATE CARD EDITOR ─────── */
+.rate-edit-row { display: grid; grid-template-columns: 1fr 110px; gap: 10px; align-items: center; margin-bottom: 10px }
+.rate-edit-row .rl { font-size: 13.5px; font-weight: 500; color: var(--ink-2) }
+.rate-edit-row input {
+  height: 42px; border: 1.5px solid var(--border-2); border-radius: var(--r-sm);
+  padding: 0 12px; font-size: 14px; font-family: inherit; color: var(--ink);
+  outline: none; font-weight: 600; text-align: right;
+}
+.rate-edit-row input:focus { border-color: var(--flame); box-shadow: 0 0 0 3px var(--flame-soft) }
+
+/* ─────── FAQ ACCORDION ─────── */
+.faq-item { border-bottom: 1px solid var(--border) }
+.faq-item:last-child { border-bottom: none }
+.faq-q { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; font-size: 13.5px; font-weight: 600; cursor: pointer; color: var(--ink); letter-spacing: -0.1px }
+.faq-q-arrow { transition: transform 220ms var(--ease); color: var(--ink-4); font-size: 18px; line-height: 1 }
+.faq-item.open .faq-q-arrow { transform: rotate(45deg); color: var(--flame) }
+.faq-a { max-height: 0; overflow: hidden; transition: max-height 280ms var(--ease); font-size: 13px; color: var(--ink-3); line-height: 1.6 }
+.faq-item.open .faq-a { max-height: 200px; padding-bottom: 14px }
+
+/* ─────── REFERRAL CARD ─────── */
+.ref-card {
+  margin: 0 20px 14px; padding: 18px;
+  background: linear-gradient(135deg, #FEF1EE 0%, #FFE9E3 100%);
+  border: 1.5px solid rgba(232,85,58,0.18);
+  border-radius: var(--r-lg);
+}
+.ref-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px }
+.ref-head-icon { width: 32px; height: 32px; border-radius: 10px; background: var(--flame); display: grid; place-items: center; color: #fff }
+.ref-head-icon svg { width: 16px; height: 16px; stroke-width: 2 }
+.ref-title { font-size: 14px; font-weight: 700; letter-spacing: -0.2px }
+.ref-sub { font-size: 12px; color: var(--ink-3); line-height: 1.5; margin-bottom: 12px }
+.ref-code-row { display: flex; gap: 8px }
+.ref-code { flex: 1; background: #fff; border: 1.5px dashed var(--border-2); border-radius: var(--r-sm); padding: 10px 14px; font-family: "SF Mono", "Courier New", monospace; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; color: var(--ink) }
+.ref-copy-btn { padding: 10px 16px; background: var(--flame); color: #fff; border: none; border-radius: var(--r-sm); font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit }
+
+/* ─────── SERVICES IN PROFILE ─────── */
+.prof-link-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.prof-link-row:last-child { border-bottom: none }
+.prof-link-row:active { background: var(--muted) }
+.prof-link-ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0 }
+.prof-link-ic svg { width: 16px; height: 16px; stroke-width: 1.8 }
+.prof-link-body { flex: 1 }
+.prof-link-title { font-size: 13.5px; font-weight: 600; color: var(--ink); letter-spacing: -0.1px }
+.prof-link-desc { font-size: 11.5px; color: var(--ink-4); margin-top: 1px }
+.prof-link-arrow { color: var(--ink-4); flex-shrink: 0 }
+.prof-link-arrow svg { width: 14px; height: 14px; stroke-width: 2 }
+
+/* ─────── SAVED RIBBON ─────── */
+.saved-ribbon { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--flame-soft); color: var(--flame); border-radius: var(--r-pill); font-size: 11.5px; font-weight: 600; margin: 0 20px 10px; width: fit-content }
+.saved-ribbon svg { width: 12px; height: 12px }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useRef}=React;
+
+/* ── SVG Icon helper ── */
+const I={
+  home:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  chart:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>,
+  briefcase:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+  store:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/></svg>,
+  user:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  bell:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
+  search:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+  heart:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>,
+  pin:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>,
+  clock:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  users:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  zap:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  rocket:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>,
+  check:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  eye:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>,
+  up:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="m7 7 5-5 5 5"/><path d="M12 2v18"/></svg>,
+  ig:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>,
+  yt:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>,
+  circle:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>,
+  film:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="2.18" ry="2.18"/><line x1="7" x2="7" y1="2" y2="22"/><line x1="17" x2="17" y1="2" y2="22"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="2" x2="7" y1="7" y2="7"/><line x1="2" x2="7" y1="17" y2="17"/><line x1="17" x2="22" y1="7" y2="7"/><line x1="17" x2="22" y1="17" y2="17"/></svg>,
+  arrowL:()=><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
+  arrowR:()=><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>,
+  shield:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>,
+  spark:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.39 7.36H22l-6.19 4.5L18.2 21 12 16.5 5.8 21l2.39-7.14L2 9.36h7.61z"/></svg>,
+  wallet:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M20 12v4H6a2 2 0 0 0-2 2c0 1.1.9 2 2 2h14v-4"/><path d="M4 6v12"/></svg>,
+  chat:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+  send:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>,
+  plus:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
+  download:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
+  upload:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
+  link:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+  edit:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>,
+  logout:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>,
+  help:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>,
+  gift:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7"/><line x1="12" x2="12" y1="22" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>,
+  share:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>,
+  copy:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>,
+  settings:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+  x:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+  mail:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>,
+  shop:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
+  whatsapp:()=><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.77-.87-2.05-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.47-2.4-1.48-.89-.8-1.48-1.77-1.66-2.07-.17-.3-.02-.47.13-.62.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.5s1.07 2.9 1.22 3.1c.15.2 2.1 3.22 5.1 4.51.72.3 1.27.48 1.7.62.72.23 1.37.2 1.88.12.57-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.32-1.4c1.45.79 3.08 1.21 4.72 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2"/></svg>,
+};
+
+/* ── DATA ── */
+const DEALS=[
+  {id:1,brand:"Hungry Birds Cafe",brandType:"Cafe & Bakery",area:"City Center",brandImg:"https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=100&h=100&fit=crop",coverImg:"https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&h=400&fit=crop",title:"Weekend Brunch Reel \u2014 Cafe Vibes & Top Dishes",category:"Food",city:"Gwalior",platform:"Instagram",deliverables:"1 Reel + 2 Stories",pay:"\u20B95,000",badge:"new",deadline:"Apr 20",desc:"Hungry Birds is Gwalior's most Instagrammable cafe. Shoot a weekend brunch reel showcasing our signature waffles, shakes, and captivating interiors. Full creative freedom.",followers:"1K\u201310K",saved:false,applied:false},
+  {id:2,brand:"Kalakriti Boutique",brandType:"Designer Boutique",area:"Lashkar",brandImg:"https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=100&h=100&fit=crop",coverImg:"https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&h=400&fit=crop",title:"Festive Lehenga Collection \u2014 3 Outfit Styling Reels",category:"Fashion",city:"Gwalior",platform:"Instagram",deliverables:"3 Reels + 1 Carousel",pay:"\u20B912,000",badge:"hot",deadline:"Apr 25",desc:"Style 3 looks from our festive bridal lehenga collection at our Lashkar showroom. Shoot at boutique + Gwalior Fort backdrop.",followers:"5K\u201350K",saved:false,applied:false},
+  {id:3,brand:"FitZone Gym",brandType:"Fitness Studio",area:"Thatipur",brandImg:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=100&h=100&fit=crop",coverImg:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&h=400&fit=crop",title:"Gym Tour + 7-Day Transformation Vlog",category:"Fitness",city:"Gwalior",platform:"YouTube",deliverables:"1 Video + 5 Stories",pay:"\u20B98,000",badge:"new",deadline:"Apr 22",desc:"Document a 7-day fitness challenge at FitZone Thatipur. Free month membership + \u20B98K compensation.",followers:"2K\u201325K",saved:false,applied:false},
+  {id:4,brand:"Panchvati Gaurav",brandType:"Restaurant",area:"Jayendraganj",brandImg:"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=100&h=100&fit=crop",coverImg:"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop",title:"Signature Thali Experience \u2014 ASMR Food Reel",category:"Food",city:"Gwalior",platform:"Instagram",deliverables:"1 Reel + 3 Stories",pay:"\u20B96,000",badge:"new",deadline:"Apr 21",desc:"ASMR-style reel of our trademark Rajasthani thali. Show the spread, colors, first bite.",followers:"2K+",saved:false,applied:false},
+  {id:5,brand:"Kanchi Creations",brandType:"Saree Boutique",area:"Bada Market",brandImg:"https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=100&h=100&fit=crop",coverImg:"https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&h=400&fit=crop",title:"Wedding Season \u2014 Banarasi Saree Showcase",category:"Fashion",city:"Gwalior",platform:"Instagram",deliverables:"2 Reels + 3 Stories",pay:"\u20B915,000",badge:"closing",deadline:"Apr 18",desc:"Style 5 Banarasi sarees at Jai Vilas Palace or Gwalior Fort. Premium content quality expected.",followers:"10K+",saved:false,applied:false},
+  {id:6,brand:"Indian Coffee House",brandType:"Heritage Cafe",area:"Bada",brandImg:"https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=100&h=100&fit=crop",coverImg:"https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=400&fit=crop",title:"\"Gwalior's Hidden Gem\" \u2014 Nostalgic Cafe Review",category:"Food",city:"Gwalior",platform:"Instagram",deliverables:"1 Reel + 1 Story",pay:"\u20B93,000",badge:"new",deadline:"Apr 23",desc:"Vintage charm, filter coffee, dosa, cutlets. Create a 'hidden gem' style reel.",followers:"500+",saved:false,applied:false},
+];
+
+const VIEWS=[
+  {name:"Hungry Birds Cafe",img:"https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=80&h=80&fit=crop",time:"2h ago",action:"Viewed your profile"},
+  {name:"Kalakriti Boutique",img:"https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=80&h=80&fit=crop",time:"5h ago",action:"Opened your rate card"},
+  {name:"Kanchi Creations",img:"https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=80&h=80&fit=crop",time:"1d ago",action:"Saved your profile"},
+  {name:"Panchvati Gaurav",img:"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=80&h=80&fit=crop",time:"2d ago",action:"Viewed media kit"},
+  {name:"The Central Mall",img:"https://images.unsplash.com/photo-1567449303078-57ad995bd329?w=80&h=80&fit=crop",time:"3d ago",action:"Viewed profile"},
+];
+
+const WORKFLOW_STEPS=[
+  {k:"applied",t:"Application Sent",d:"Brand is reviewing your profile. Typical response: 24-48 hours."},
+  {k:"accepted",t:"Brand Accepted",d:"You're selected! Brief & creative freedom unlocked below."},
+  {k:"draft",t:"Upload Draft",d:"Share your draft reel/video for brand approval.",action:"Upload Draft"},
+  {k:"approved",t:"Draft Approved",d:"Brand approved the content. Post & share the link."},
+  {k:"posted",t:"Submit Post Link",d:"Paste the Instagram/YouTube link after publishing.",action:"Add Post Link"},
+  {k:"paid",t:"Payment Released",d:"Funds land in your wallet within 3 working days."},
+];
+
+const MYDEALS=[
+  {id:1,brand:"Kalakriti Boutique",img:"https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=80&h=80&fit=crop",deal:"Festive Lookbook",status:"inprogress",progress:60,earning:"\u20B912,000",step:"Upload draft due Apr 22",color:"var(--amber)",stage:2,deadline:"Apr 22",brief:"Shoot 3 lehenga looks. Vibe: cinematic dusk at Gwalior Fort. No logo overlay — keep it editorial."},
+  {id:2,brand:"Hungry Birds Cafe",img:"https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=80&h=80&fit=crop",deal:"Brunch Reel",status:"completed",progress:100,earning:"\u20B95,000",step:"Paid \u2022 \u20B95,000 credited",color:"var(--emerald)",stage:5,deadline:"Apr 14",brief:"Signature waffle + iced Spanish latte. 30s reel, hook in first 2s."},
+  {id:3,brand:"FitZone Gym",img:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=80&h=80&fit=crop",deal:"7-Day Challenge",status:"applied",progress:15,earning:"\u20B98,000",step:"Brand reviewing",color:"var(--sky)",stage:0,deadline:"Apr 22",brief:"Full week transformation vlog. Membership + kit included."},
+  {id:4,brand:"Kanchi Creations",img:"https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=80&h=80&fit=crop",deal:"Banarasi Sarees",status:"applied",progress:10,earning:"\u20B915,000",step:"Application sent \u00b7 2h ago",color:"var(--sky)",stage:0,deadline:"Apr 18",brief:"Style 5 Banarasis at Jai Vilas Palace. Premium content only."},
+];
+
+const INBOX=[
+  {id:1,brand:"Hungry Birds Cafe",img:"https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=80&h=80&fit=crop",last:"Payment released \u2014 \u20B95K credited. Thanks again!",time:"2h",unread:0,messages:[
+    {t:"Hi! Loved your profile. Would you be open to shooting our weekend brunch?",from:"them",time:"Mon 10:32"},
+    {t:"Yes! Which day works — Saturday or Sunday?",from:"me",time:"Mon 10:48"},
+    {t:"Saturday 10 AM works. Bring a friend for candid shots.",from:"them",time:"Mon 11:02"},
+    {t:"Done! Reel is live — tagged you both handles.",from:"me",time:"Wed 17:20"},
+    {t:"Payment released \u2014 \u20B95K credited. Thanks again!",from:"them",time:"Today 09:14"},
+  ]},
+  {id:2,brand:"Kalakriti Boutique",img:"https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=80&h=80&fit=crop",last:"Can you share a draft by Tuesday?",time:"5h",unread:2,messages:[
+    {t:"Hi Ayush \u2014 congrats, you're selected for the festive shoot!",from:"them",time:"Apr 12"},
+    {t:"Thank you! When's the shoot date?",from:"me",time:"Apr 12"},
+    {t:"15th April at our Lashkar showroom, 3 PM. Outfits ready.",from:"them",time:"Apr 12"},
+    {t:"Can you share a draft by Tuesday?",from:"them",time:"Today 13:08"},
+  ]},
+  {id:3,brand:"FitZone Gym",img:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=80&h=80&fit=crop",last:"We're finalizing shortlist today \u2014 stay tuned.",time:"1d",unread:0,messages:[
+    {t:"Thanks for applying! We received 40+ applications.",from:"them",time:"Yesterday"},
+    {t:"We're finalizing shortlist today \u2014 stay tuned.",from:"them",time:"Yesterday"},
+  ]},
+];
+
+const TRANSACTIONS=[
+  {id:1,kind:"credit",title:"Hungry Birds Cafe \u2014 Brunch Reel",date:"Apr 16, 2026",amount:5000},
+  {id:2,kind:"pending",title:"Kalakriti Boutique \u2014 Festive Lookbook",date:"Expected Apr 30",amount:12000},
+  {id:3,kind:"credit",title:"Bonus \u2014 3 referrals this month",date:"Apr 12, 2026",amount:900},
+  {id:4,kind:"debit",title:"Withdrawal to UPI \u2014 ayush@oksbi",date:"Apr 08, 2026",amount:4500},
+  {id:5,kind:"credit",title:"Welcome bonus",date:"Apr 01, 2026",amount:500},
+];
+
+const FAQ=[
+  {q:"How do I get paid?",a:"Brands release payment to your Fluence wallet after deliverables are approved. You can withdraw to UPI anytime \u2014 funds land in 3 working hours."},
+  {q:"When does a brand approve my work?",a:"Typical SLA is 24-48 hours after you upload the draft. If it takes longer, message them via Inbox or contact Fluence support \u2014 we escalate within 4 hours."},
+  {q:"What's Fluence's cut?",a:"Flat 10% platform fee, deducted when the brand releases payment. No subscription, no hidden charges. Creators under 1K followers get 0% for their first 3 deals."},
+  {q:"Can I apply to multiple deals?",a:"Yes \u2014 apply to as many as you like. Each application is judged independently. Most creators land 2-3 deals per month."},
+  {q:"What if a brand ghosts me?",a:"Report via Support (below). Fluence keeps a brand-reliability score internally and delists brands that ghost twice. Your time is protected."},
+  {q:"Is Fluence only for Gwalior?",a:"We started with Gwalior (April 2026) and are expanding to Indore and Bhopal next. Sign up early \u2014 founding creators get 0% platform fee for 6 months."},
+];
+
+const NICHES_ALL=["Food","Fashion","Fitness","Lifestyle","Tech","Travel","Beauty","Comedy","Education","Photography","Music","Dance","Gaming","Parenting","Finance"];
+
+const NOTIFS=[
+  {id:1,emoji:"\uD83D\uDC40",bg:"var(--flame-soft)",text:"<strong>Hungry Birds Cafe</strong> viewed your profile",time:"2 hours ago",unread:true},
+  {id:2,emoji:"\uD83C\uDFAF",bg:"var(--emerald-soft)",text:"New deal match: <strong>FitZone Gym</strong> looking for fitness creators",time:"4 hours ago",unread:true},
+  {id:3,emoji:"\u2705",bg:"var(--sky-soft)",text:"Application to <strong>Kalakriti Boutique</strong> approved!",time:"1 day ago",unread:false},
+  {id:4,emoji:"\uD83D\uDCB0",bg:"var(--emerald-soft)",text:"\u20B95,000 credited for <strong>Hungry Birds</strong> collab",time:"3 days ago",unread:false},
+  {id:5,emoji:"\uD83D\uDCF8",bg:"var(--violet-soft)",text:"New service booking: <strong>Photography</strong> from @creativemind",time:"5 days ago",unread:false},
+];
+
+const SVCS=[
+  {name:"Photographer",desc:"Product shoots, reels & events",price:"\u20B92,000",unit:"/shoot",img:"https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=400&h=250&fit=crop"},
+  {name:"Video Editor",desc:"Reels, YouTube, transitions",price:"\u20B91,500",unit:"/video",img:"https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=400&h=250&fit=crop"},
+  {name:"Scriptwriter",desc:"Hooks, scripts & captions",price:"\u20B9800",unit:"/script",img:"https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&h=250&fit=crop"},
+  {name:"Growth Expert",desc:"Hashtags, SEO & strategy",price:"\u20B93,000",unit:"/month",img:"https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=250&fit=crop"},
+  {name:"Styling & Makeup",desc:"Shoot-ready looks",price:"\u20B91,500",unit:"/session",img:"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&h=250&fit=crop"},
+  {name:"Fashion Designer",desc:"Custom outfits & mood boards",price:"\u20B95,000",unit:"/project",img:"https://images.unsplash.com/photo-1537832816519-689ad163d4f2?w=400&h=250&fit=crop"},
+];
+
+/* ── API helper ── */
+const API = {
+  url: () => window.FLUENCE?.API_URL || "",
+  async getDeals() {
+    if (!this.url()) return null;
+    try {
+      const r = await fetch(this.url() + "?type=deals");
+      const j = await r.json();
+      return j.ok ? (j.deals || []) : null;
+    } catch (e) { console.warn("Fetch deals failed:", e); return null; }
+  },
+  async registerCreator(creator) {
+    if (!this.url()) return { ok: true, demo: true };
+    try {
+      const r = await fetch(this.url(), {
+        method: "POST", body: JSON.stringify({ action: "register_creator", creator })
+      });
+      return await r.json();
+    } catch (e) { return { ok: false, error: e.message } }
+  }
+};
+
+/* ── APP ── */
+function App(){
+  const[authStep,setAuthStep]=useState("splash"); // splash | onb1 | onb2 | onb3 | done
+  const[googleUser,setGoogleUser]=useState(null);
+  const[profile,setProfile]=useState({name:"",handle:"",followers:"",city:"Gwalior",niches:[],bio:"",upi:"",phone:"",termsAccepted:false});
+  const[authLoading,setAuthLoading]=useState(false);
+  const[authError,setAuthError]=useState("");
+
+  const[tab,setTab]=useState("home");
+  const[deals,setDeals]=useState(DEALS);
+  const[myDeals,setMyDeals]=useState(MYDEALS);
+  const[inbox,setInbox]=useState(INBOX);
+  const[dealsLoading,setDealsLoading]=useState(false);
+  const[filter,setFilter]=useState("All");
+  const[sel,setSel]=useState(null);       // deal detail overlay
+  const[dtab,setDtab]=useState("all");
+  const[q,setQ]=useState("");
+  const[toasts,setToasts]=useState([]);
+  const[modal,setModal]=useState(null);
+  const[showSavedOnly,setShowSavedOnly]=useState(false);
+
+  // sheets / modals
+  const[workflowDeal,setWorkflowDeal]=useState(null);
+  const[chatThread,setChatThread]=useState(null);
+  const[withdrawOpen,setWithdrawOpen]=useState(false);
+  const[editProfileOpen,setEditProfileOpen]=useState(false);
+  const[rateCardOpen,setRateCardOpen]=useState(false);
+  const[supportOpen,setSupportOpen]=useState(false);
+  const[servicesOpen,setServicesOpen]=useState(false);
+  const[logoutAsk,setLogoutAsk]=useState(false);
+
+  // rate card state
+  const[rates,setRates]=useState({reel:"",story:"",yt:"",bundle:""});
+
+  const toast=(msg,kind="info")=>{
+    const id=Date.now()+Math.random();
+    setToasts(t=>[...t,{id,msg,kind}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3200);
+  };
+  const hangTight=(feature)=>toast(feature+" — hang tight, we're shipping this super soon ✨","info");
+
+  // Fetch real deals once logged in
+  useEffect(()=>{
+    if(authStep!=="done")return;
+    (async()=>{
+      setDealsLoading(true);
+      const fetched=await API.getDeals();
+      if(fetched&&fetched.length>0){
+        setDeals(fetched.map(normalizeDeal));
+        toast(`Loaded ${fetched.length} live deals from Gwalior`,"success");
+      }
+      setDealsLoading(false);
+    })();
+  },[authStep]);
+
+  const toggle=(id,key)=>{
+    setDeals(ds=>ds.map(d=>d.id===id?{...d,[key]:!d[key]}:d));
+    if(key==="saved")toast("Saved to your shortlist","success");
+    if(key==="applied")toast("Application sent! Brand reviews within 48h ✓","success");
+  };
+
+  // Filter logic
+  const fd=deals.filter(d=>{
+    if(showSavedOnly&&!d.saved)return false;
+    if(filter!=="All"&&d.category!==filter)return false;
+    if(q){
+      const s=q.toLowerCase();
+      if(!(d.brand||"").toLowerCase().includes(s)&&!(d.title||"").toLowerCase().includes(s))return false;
+    }
+    return true;
+  });
+  const fmd=myDeals.filter(d=>dtab==="all"||d.status===dtab);
+  const walletBalance=TRANSACTIONS.filter(t=>t.kind==="credit").reduce((a,b)=>a+b.amount,0)-TRANSACTIONS.filter(t=>t.kind==="debit").reduce((a,b)=>a+b.amount,0);
+  const pendingTotal=TRANSACTIONS.filter(t=>t.kind==="pending").reduce((a,b)=>a+b.amount,0);
+  const lifetime=TRANSACTIONS.filter(t=>t.kind==="credit").reduce((a,b)=>a+b.amount,0);
+  const unreadInbox=inbox.reduce((a,b)=>a+(b.unread||0),0);
+
+  /* ── Google Sign-In ── */
+  const handleGoogleSignIn=async()=>{
+    setAuthLoading(true);setAuthError("");
+    try{
+      if(window.FLUENCE?.firebaseReady&&window.FLUENCE.auth){
+        const provider=new firebase.auth.GoogleAuthProvider();
+        const result=await window.FLUENCE.auth.signInWithPopup(provider);
+        const u=result.user;
+        setGoogleUser({uid:u.uid,email:u.email,name:u.displayName,picture:u.photoURL});
+        setProfile(p=>({...p,name:u.displayName||""}));
+        setAuthLoading(false);setAuthStep("onb1");
+        toast("Signed in! Let's build your creator profile.","success");
+      } else {
+        await new Promise(r=>setTimeout(r,500));
+        setGoogleUser({uid:"demo_"+Date.now(),email:"demo@fluence.lol",name:"Demo Creator",picture:null});
+        setProfile(p=>({...p,name:"Demo Creator"}));
+        setAuthLoading(false);setAuthStep("onb1");
+        toast("Demo mode — complete profile to explore deals","info");
+      }
+    }catch(e){
+      console.error(e);
+      setAuthError(e.message||"Sign-in failed. Try again.");
+      setAuthLoading(false);
+    }
+  };
+
+  const submitOnboarding=async()=>{
+    setAuthError("");setAuthLoading(true);
+    const result=await API.registerCreator({
+      name:profile.name, email:googleUser?.email||"",
+      handle:profile.handle, followers:profile.followers,
+      city:profile.city, niches:profile.niches.join(","),
+      bio:profile.bio, upi:profile.upi, phone:profile.phone,
+    });
+    setAuthLoading(false);
+    if(result.ok){setAuthStep("done");toast("Welcome to Fluence! Find your first deal.","success");}
+    else{setAuthError("Signup failed: "+(result.error||"unknown"))}
+  };
+
+  // Workflow action handler
+  const advanceWorkflow=(dealId)=>{
+    setMyDeals(md=>md.map(d=>{
+      if(d.id!==dealId)return d;
+      const nextStage=Math.min(d.stage+1,WORKFLOW_STEPS.length-1);
+      const newProgress=Math.round(((nextStage+1)/WORKFLOW_STEPS.length)*100);
+      const newStatus=nextStage>=5?"completed":nextStage>=2?"inprogress":"applied";
+      return {...d,stage:nextStage,progress:newProgress,status:newStatus};
+    }));
+    const currentStep=workflowDeal?WORKFLOW_STEPS[workflowDeal.stage]:null;
+    toast((currentStep?.action||"Step")+" submitted ✓","success");
+    setWorkflowDeal(prev=>prev?{...prev,stage:Math.min(prev.stage+1,WORKFLOW_STEPS.length-1)}:null);
+  };
+
+  const sendChat=(threadId,text)=>{
+    if(!text.trim())return;
+    setInbox(ib=>ib.map(t=>t.id!==threadId?t:{...t,unread:0,last:text,time:"now",messages:[...t.messages,{t:text,from:"me",time:"now"}]}));
+    setChatThread(prev=>prev?{...prev,messages:[...prev.messages,{t:text,from:"me",time:"now"}]}:null);
+  };
+
+  // ── AUTH SCREENS ──
+  if(authStep==="splash")return <Splash onGoogleSignIn={handleGoogleSignIn} loading={authLoading} error={authError}/>;
+  if(authStep==="onb1")return <OnboardStep1 profile={profile} setProfile={setProfile} onNext={()=>{
+    if(!profile.name||!profile.handle){setAuthError("Please fill name and Instagram handle");return}
+    setAuthError("");setAuthStep("onb2");
+  }} onBack={()=>setAuthStep("splash")} error={authError} clearError={()=>setAuthError("")}/>;
+  if(authStep==="onb2")return <OnboardStep2 profile={profile} setProfile={setProfile} onNext={()=>{
+    if(profile.niches.length===0){setAuthError("Pick at least 1 niche");return}
+    setAuthError("");setAuthStep("onb3");
+  }} onBack={()=>setAuthStep("onb1")} error={authError} clearError={()=>setAuthError("")}/>;
+  if(authStep==="onb3")return <OnboardStep3 profile={profile} setProfile={setProfile} onNext={()=>{
+    if(!profile.phone){setAuthError("Phone is required for brand contact");return}
+    if(!profile.termsAccepted){setAuthError("Please accept terms to continue");return}
+    setAuthError("");submitOnboarding();
+  }} onBack={()=>setAuthStep("onb2")} loading={authLoading} error={authError}/>;
+
+  // ── MAIN APP ──
+  const logout=()=>{
+    setAuthStep("splash");
+    setGoogleUser(null);
+    setProfile({name:"",handle:"",followers:"",city:"Gwalior",niches:[],bio:"",upi:"",phone:"",termsAccepted:false});
+    setLogoutAsk(false);
+    setTab("home");
+    toast("Logged out","info");
+  };
+
+  return <div className="app">
+    <div className="hdr">
+      <div className="hdr-logo">
+        <LogoMark size={28}/>
+        <span>fluence</span>
+      </div>
+      <div className="hdr-actions">
+        {showSavedOnly&&<button className="icon-btn" onClick={()=>setShowSavedOnly(false)} title="Show all">
+          <I.x/>
+        </button>}
+        {!showSavedOnly&&tab==="home"&&<button className="icon-btn" onClick={()=>{setShowSavedOnly(true);toast("Showing saved deals only","info");}} title="Saved">
+          <I.heart/>
+        </button>}
+        <button className="icon-btn" onClick={()=>setTab("notifications")}>
+          <I.bell/><span className="badge-dot"/>
+        </button>
+      </div>
+    </div>
+
+    <div className="main">
+      {tab==="home"&&<Home deals={fd} loading={dealsLoading} filters={["All","Food","Fashion","Fitness","Lifestyle","Beauty"]} filter={filter} setFilter={setFilter} toggle={toggle} setSel={setSel} q={q} setQ={setQ} profile={profile} showSavedOnly={showSavedOnly} setShowSavedOnly={setShowSavedOnly}/>}
+      {tab==="deals"&&<MyDealsPage deals={fmd} dtab={dtab} setDtab={setDtab} openWorkflow={d=>setWorkflowDeal(d)} hangTight={hangTight}/>}
+      {tab==="earnings"&&<EarningsPage balance={walletBalance} pending={pendingTotal} lifetime={lifetime} onWithdraw={()=>setWithdrawOpen(true)} upi={profile.upi}/>}
+      {tab==="inbox"&&<InboxPage threads={inbox} onOpen={t=>setChatThread(t)}/>}
+      {tab==="profile"&&<Profile
+        profile={profile} googleUser={googleUser}
+        myDealsCount={myDeals.length}
+        totalEarned={lifetime}
+        onEdit={()=>setEditProfileOpen(true)}
+        onRateCard={()=>setRateCardOpen(true)}
+        onServices={()=>setServicesOpen(true)}
+        onSupport={()=>setSupportOpen(true)}
+        onLogout={()=>setLogoutAsk(true)}
+        hangTight={hangTight}
+        rates={rates}
+        toast={toast}
+      />}
+      {tab==="notifications"&&<Notifications/>}
+    </div>
+
+    <div className="bnav">
+      {[
+        {k:"home",icon:I.home,l:"Home"},
+        {k:"deals",icon:I.briefcase,l:"Deals"},
+        {k:"earnings",icon:I.wallet,l:"Earnings"},
+        {k:"inbox",icon:I.chat,l:"Inbox",badge:unreadInbox},
+        {k:"profile",icon:I.user,l:"Profile"},
+      ].map(n=>
+        <button key={n.k} className={tab===n.k?"on":""} onClick={()=>setTab(n.k)} style={{position:"relative"}}>
+          <n.icon/>
+          {n.badge>0&&<span style={{position:"absolute",top:2,right:"28%",background:"var(--flame)",color:"#fff",fontSize:9,fontWeight:700,borderRadius:"999px",padding:"1px 5px",lineHeight:1.3}}>{n.badge}</span>}
+          <span className="bl">{n.l}</span>
+        </button>
+      )}
+    </div>
+
+    {sel&&<DetailSheet d={sel} onClose={()=>setSel(null)} onApply={()=>{toggle(sel.id,"applied");setSel(null)}}/>}
+    {workflowDeal&&<WorkflowSheet deal={workflowDeal} onClose={()=>setWorkflowDeal(null)} onAction={()=>advanceWorkflow(workflowDeal.id)}/>}
+    {chatThread&&<ChatSheet thread={chatThread} onClose={()=>setChatThread(null)} onSend={text=>sendChat(chatThread.id,text)}/>}
+    {withdrawOpen&&<WithdrawSheet upi={profile.upi} balance={walletBalance} onClose={()=>setWithdrawOpen(false)} onConfirm={(amt)=>{toast(`₹${amt.toLocaleString('en-IN')} withdrawal initiated to ${profile.upi||'your UPI'} ✓`,"success");setWithdrawOpen(false);}}/>}
+    {editProfileOpen&&<EditProfileSheet profile={profile} setProfile={setProfile} onClose={()=>setEditProfileOpen(false)} onSave={()=>{toast("Profile updated","success");setEditProfileOpen(false);}}/>}
+    {rateCardOpen&&<RateCardSheet rates={rates} setRates={setRates} onClose={()=>setRateCardOpen(false)} onSave={()=>{toast("Rate card saved — visible to brands","success");setRateCardOpen(false);}}/>}
+    {supportOpen&&<SupportSheet onClose={()=>setSupportOpen(false)}/>}
+    {servicesOpen&&<ServicesSheet onClose={()=>setServicesOpen(false)} hangTight={hangTight}/>}
+    {logoutAsk&&<GenericModal title="Log out?" body="You'll need to sign in again to access your deals & earnings." cta="Log out" onCta={logout} onClose={()=>setLogoutAsk(false)} danger/>}
+    {modal&&<GenericModal {...modal} onClose={()=>setModal(null)}/>}
+    <Toaster toasts={toasts}/>
+  </div>;
+}
+
+/* ── HOME ── */
+function Home({deals,loading,filters,filter,setFilter,toggle,setSel,q,setQ,profile}){
+  const firstName=(profile?.name||"").split(" ")[0]||"there";
+  const greet=new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening";
+  return <div className="fade-in">
+    <div className="page-head">
+      <p style={{fontSize:"13px",color:"var(--ink-4)",fontWeight:"500"}}>{greet}, {firstName}</p>
+      <h1>Find your next<br/>brand deal</h1>
+    </div>
+    <div className="search-wrap"><div className="search-box"><I.search/><input placeholder="Search brands, deals..." value={q} onChange={e=>setQ(e.target.value)}/></div></div>
+    <div className="chip-row">
+      {filters.map(f=><button key={f} className={"chip-btn"+(filter===f?" on":"")} onClick={()=>setFilter(f)}>{f}</button>)}
+      <button className="chip-btn"><I.pin style={{width:12,height:12,display:"inline",verticalAlign:"-2px",marginRight:3}}/>Gwalior</button>
+    </div>
+    <div className="signal-strip"><I.zap/>3 brands showed interest in your profile this week</div>
+    {loading&&<div className="loading-row"><div className="spinner"/>Loading live deals...</div>}
+    {!loading&&deals.map((d,i)=><DealCard key={d.id} d={d} toggle={toggle} setSel={setSel} i={i}/>)}
+    {!loading&&deals.length===0&&<div className="empty"><I.search/><h3>No deals match</h3><p>Try changing filters or check back soon — new deals drop daily</p></div>}
+  </div>;
+}
+
+function DealCard({d,toggle,setSel,i}){
+  const bc=d.badge==="new"?"dc-badge-new":d.badge==="hot"?"dc-badge-hot":"dc-badge-closing";
+  const bt=d.badge==="new"?"NEW":d.badge==="hot"?"HOT":"CLOSING SOON";
+  return <div className="deal-card fade-in" style={{animationDelay:i*50+"ms"}} onClick={()=>setSel(d)}>
+    <div className="dc-cover">
+      <img src={d.coverImg} alt={d.brand} loading="lazy"/>
+      <div className="dc-cover-grad"/>
+      <span className={"dc-badge "+bc}>{bt}</span>
+      <button className={"dc-save"+(d.saved?" saved":"")} onClick={e=>{e.stopPropagation();toggle(d.id,"saved")}}>
+        <I.heart/>
+      </button>
+    </div>
+    <div className="dc-body">
+      <div className="dc-brand-row">
+        <img className="dc-brand-img" src={d.brandImg} alt={d.brand}/>
+        <div><div className="dc-brand-name">{d.brand}</div><div className="dc-brand-type">{d.brandType} · {d.area}</div></div>
+      </div>
+      <div className="dc-title">{d.title}</div>
+      <div className="dc-meta">
+        <span className="dc-meta-tag"><I.pin/>{d.city}</span>
+        <span className="dc-meta-tag"><I.film/>{d.platform}</span>
+        <span className="dc-meta-tag">{d.deliverables}</span>
+        <span className="dc-meta-tag"><I.users/>{d.followers}</span>
+      </div>
+      <div className="dc-footer">
+        <div className="dc-pay">{d.pay}<span> · Due {d.deadline}</span></div>
+        <button className={"dc-apply "+(d.applied?"dc-apply-done":"dc-apply-active")} onClick={e=>{e.stopPropagation();toggle(d.id,"applied")}}>
+          {d.applied?"\u2713 Applied":"Quick Apply"}
+        </button>
+      </div>
+    </div>
+  </div>;
+}
+
+function DetailSheet({d,onClose,onApply}){
+  return <div className="overlay">
+    <div className="ov-backdrop" onClick={onClose}/>
+    <div className="ov-sheet">
+      <div className="ov-handle"/>
+      <img className="ov-cover" src={d.coverImg} alt={d.brand}/>
+      <div className="ov-body">
+        <div className="ov-brand-row">
+          <img className="ov-brand-img" src={d.brandImg} alt={d.brand}/>
+          <div><div className="ov-brand-name">{d.brand}</div><div className="ov-brand-type">{d.brandType} · {d.area}</div></div>
+        </div>
+        <div className="ov-title">{d.title}</div>
+        <div className="ov-section"><h4>About this deal</h4><p>{d.desc}</p></div>
+        <div className="ov-stats">
+          <div className="ov-stat-box"><div className="osl">Compensation</div><div className="osv" style={{color:"var(--emerald)"}}>{d.pay}</div></div>
+          <div className="ov-stat-box"><div className="osl">Deadline</div><div className="osv">{d.deadline}</div></div>
+          <div className="ov-stat-box"><div className="osl">Platform</div><div className="osv">{d.platform}</div></div>
+          <div className="ov-stat-box"><div className="osl">Min Followers</div><div className="osv">{d.followers}</div></div>
+        </div>
+        <div className="ov-section"><h4>Deliverables</h4><p>{d.deliverables}</p></div>
+        <button className="apply-full" onClick={onApply}>{d.applied?"\u2713 Already Applied":"Apply for this Deal"}</button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── STATS ── */
+/* ── MY DEALS ── */
+function MyDealsPage({deals,dtab,setDtab,openWorkflow,hangTight}){
+  const tabs=[{k:"all",l:"All",c:MYDEALS.length},{k:"applied",l:"Applied",c:MYDEALS.filter(d=>d.status==="applied").length},{k:"inprogress",l:"Active",c:MYDEALS.filter(d=>d.status==="inprogress").length},{k:"completed",l:"Done",c:MYDEALS.filter(d=>d.status==="completed").length}];
+  const earned=MYDEALS.filter(d=>d.status==="completed").reduce((a,b)=>a+parseInt((b.earning||"").replace(/[^\d]/g,"")||0),0);
+  const pipeline=MYDEALS.filter(d=>d.status!=="completed").reduce((a,b)=>a+parseInt((b.earning||"").replace(/[^\d]/g,"")||0),0);
+  return <div className="fade-in">
+    <div className="page-head"><h1>My Deals</h1><p>Track applications & brand collabs</p></div>
+    <div className="stat-row" style={{marginBottom:"14px"}}>
+      <div className="stat-card"><div className="stat-top"><div className="stat-label">Earned</div><div className="stat-icon" style={{background:"var(--emerald-soft)",color:"var(--emerald)"}}><I.check/></div></div><div className="stat-val" style={{color:"var(--emerald)"}}>₹{(earned/1000).toFixed(0)}K</div><div style={{fontSize:"11px",color:"var(--ink-4)"}}>{MYDEALS.filter(d=>d.status==="completed").length} completed</div></div>
+      <div className="stat-card"><div className="stat-top"><div className="stat-label">Pipeline</div><div className="stat-icon" style={{background:"var(--amber-soft)",color:"var(--amber)"}}><I.clock/></div></div><div className="stat-val">₹{(pipeline/1000).toFixed(0)}K</div><div style={{fontSize:"11px",color:"var(--ink-4)"}}>{MYDEALS.filter(d=>d.status!=="completed").length} active</div></div>
+    </div>
+    <div className="tab-bar">{tabs.map(t=><button key={t.k} className={"tab-btn"+(dtab===t.k?" on":"")} onClick={()=>setDtab(t.k)}>{t.l}<span className="tab-c">{t.c}</span></button>)}</div>
+    {deals.length===0&&<div className="empty"><I.briefcase/><h3>No deals here yet</h3><p>Apply to a deal on the Home tab to get started</p></div>}
+    {deals.map((d,i)=><div key={d.id} className="deal-track fade-in" style={{animationDelay:i*50+"ms",cursor:"pointer"}} onClick={()=>openWorkflow(d)}>
+      <div className="dt-top"><div className="dt-brand"><img className="dt-img" src={d.img} alt={d.brand}/><div><div className="dt-name">{d.brand}</div><div className="dt-deal">{d.deal}</div></div></div><span className={"status-pill st-"+d.status}>{d.status==="applied"?"Applied":d.status==="inprogress"?"Active":"Completed"}</span></div>
+      <div className="progress-track"><div className="progress-fill" style={{width:d.progress+"%",background:d.color}}/></div>
+      <div className="dt-foot"><span>{d.step}</span><span className="earn">{d.earning}</span></div>
+    </div>)}
+  </div>;
+}
+
+/* ── EARNINGS ── */
+function EarningsPage({balance,pending,lifetime,onWithdraw,upi}){
+  return <div className="fade-in">
+    <div className="page-head"><h1>Earnings</h1><p>Wallet, history & withdrawals</p></div>
+    <div className="wallet-card">
+      <div className="wallet-label">AVAILABLE BALANCE</div>
+      <div className="wallet-amount">₹{balance.toLocaleString('en-IN')}</div>
+      <div className="wallet-sub">{upi?("To "+upi):"Set your UPI in Profile → Edit"} · Instant withdraw</div>
+      <div className="wallet-actions">
+        <button className="wallet-btn primary" onClick={onWithdraw} disabled={balance<=0}><I.download/>Withdraw</button>
+        <button className="wallet-btn ghost" onClick={()=>window.open("https://wa.me/918815621916?text=Hi%20Fluence%20%E2%80%94%20question%20about%20earnings","_blank")}><I.help/>Support</button>
+      </div>
+    </div>
+    <div className="earn-summary">
+      <div className="earn-sum-card"><div className="earn-sum-label">Pending</div><div className="earn-sum-val" style={{color:"var(--amber)"}}>₹{(pending/1000).toFixed(1)}K</div></div>
+      <div className="earn-sum-card"><div className="earn-sum-label">Lifetime</div><div className="earn-sum-val">₹{(lifetime/1000).toFixed(1)}K</div></div>
+      <div className="earn-sum-card"><div className="earn-sum-label">Deals</div><div className="earn-sum-val">{TRANSACTIONS.filter(t=>t.kind==="credit").length}</div></div>
+    </div>
+    <div className="section-label"><h2>Recent activity</h2></div>
+    <div className="txn-list">
+      {TRANSACTIONS.map(t=><div key={t.id} className="txn-item">
+        <div className={"txn-icon "+t.kind}>
+          {t.kind==="credit"?<I.download/>:t.kind==="debit"?<I.upload/>:<I.clock/>}
+        </div>
+        <div className="txn-body">
+          <div className="txn-title">{t.title}</div>
+          <div className="txn-date">{t.date}</div>
+        </div>
+        <div className={"txn-amt "+(t.kind==="credit"?"pos":t.kind==="debit"?"neg":"pending")}>
+          {t.kind==="debit"?"−":t.kind==="credit"?"+":""}₹{t.amount.toLocaleString('en-IN')}
+        </div>
+      </div>)}
+    </div>
+  </div>;
+}
+
+/* ── INBOX ── */
+function InboxPage({threads,onOpen}){
+  return <div className="fade-in">
+    <div className="page-head"><h1>Inbox</h1><p>Messages from brands you're working with</p></div>
+    {threads.length===0&&<div className="empty"><I.chat/><h3>No messages yet</h3><p>Apply to deals and brands will start reaching out</p></div>}
+    <div className="thread-list">
+      {threads.map(t=><div key={t.id} className={"thread-item"+(t.unread?" unread":"")} onClick={()=>onOpen(t)}>
+        <img className="thread-img" src={t.img} alt={t.brand}/>
+        <div className="thread-body">
+          <div className="thread-head">
+            <div className="thread-name">{t.brand}{t.unread>0&&<span className="thread-badge">{t.unread}</span>}</div>
+            <div className="thread-time">{t.time}</div>
+          </div>
+          <div className="thread-last">{t.last}</div>
+        </div>
+      </div>)}
+    </div>
+  </div>;
+}
+
+/* ── PROFILE ── */
+function Profile({profile,googleUser,myDealsCount,totalEarned,onEdit,onRateCard,onServices,onSupport,onLogout,hangTight,rates,toast}){
+  const name=profile?.name||"Your Name";
+  const handle=profile?.handle?("@"+profile.handle.replace(/^@/,"")):"@your_handle";
+  const city=profile?.city||"Gwalior";
+  const niches=(profile?.niches&&profile.niches.length)?profile.niches:["Food","Lifestyle"];
+  const followers=profile?.followers||"—";
+  const initial=(name||"Y")[0].toUpperCase();
+  const refCode="AYUSH"+(googleUser?.uid||"X").slice(-4).toUpperCase();
+  const refLink="https://app.fluence.lol/?ref="+refCode;
+  const copyRef=async()=>{
+    try{await navigator.clipboard.writeText(refLink);toast("Referral link copied!","success");}
+    catch(e){toast("Copy failed — long-press to copy manually","warn");}
+  };
+  return <div className="fade-in">
+    <div className="prof-header">
+      <div className="prof-avatar">{initial}</div>
+      <div className="prof-name">{name}</div>
+      <div className="prof-handle">{handle} · {city}</div>
+      <div className="prof-badge"><I.rocket/>Rising Creator</div>
+      <div className="prof-numbers">
+        <div className="pn-item"><div className="pn-val">{followers}</div><div className="pn-label">Followers</div></div>
+        <div className="pn-item"><div className="pn-val">₹{(totalEarned/1000).toFixed(1)}K</div><div className="pn-label">Earned</div></div>
+        <div className="pn-item"><div className="pn-val">{myDealsCount}</div><div className="pn-label">Collabs</div></div>
+      </div>
+    </div>
+    <div className="prof-section"><h3>Niche & City Tags</h3><div className="tag-grid">{[...niches,city,"Reels"].map(t=><span key={t} className="tag-chip">{t}</span>)}</div></div>
+    <div className="prof-section"><h3>Connected Socials</h3><div className="social-row">
+      <div className="social-chip" onClick={()=>hangTight("Instagram connect")} style={{cursor:"pointer"}}><I.ig/>Connect Instagram</div>
+      <div className="social-chip" onClick={()=>hangTight("YouTube connect")} style={{cursor:"pointer"}}><I.yt/>Connect YouTube</div>
+    </div></div>
+    <div className="prof-section"><h3>Rate Card</h3><div className="rate-table">
+      {[{k:"reel",t:"Instagram Reel"},{k:"story",t:"Instagram Story"},{k:"yt",t:"YouTube Video"},{k:"bundle",t:"Bundle (Reel + 2 Stories)"}].map((r,i)=><div key={i} className="rate-row" onClick={onRateCard} style={{cursor:"pointer"}}><span className="rl">{r.t}</span><span className="rv" style={{color:rates[r.k]?"var(--ink)":"var(--ink-4)"}}>{rates[r.k]?"₹"+rates[r.k]:"Set rate"} →</span></div>)}
+    </div></div>
+    <div className="prof-section" style={{padding:"4px 20px 4px"}}>
+      <h3 style={{padding:"14px 0 4px"}}>More</h3>
+      <div className="prof-link-row" onClick={onServices}>
+        <div className="prof-link-ic" style={{background:"var(--violet-soft)",color:"var(--violet)"}}><I.shop/></div>
+        <div className="prof-link-body"><div className="prof-link-title">Hire Freelancers</div><div className="prof-link-desc">Editors, photographers, scriptwriters</div></div>
+        <div className="prof-link-arrow"><I.arrowR/></div>
+      </div>
+      <div className="prof-link-row" onClick={onSupport}>
+        <div className="prof-link-ic" style={{background:"var(--sky-soft)",color:"var(--sky)"}}><I.help/></div>
+        <div className="prof-link-body"><div className="prof-link-title">Help & Support</div><div className="prof-link-desc">FAQ, report an issue, WhatsApp us</div></div>
+        <div className="prof-link-arrow"><I.arrowR/></div>
+      </div>
+      <div className="prof-link-row" onClick={()=>hangTight("Media kit sharing")}>
+        <div className="prof-link-ic" style={{background:"var(--amber-soft)",color:"var(--amber)"}}><I.share/></div>
+        <div className="prof-link-body"><div className="prof-link-title">Share Media Kit</div><div className="prof-link-desc">One-link profile to send to brands</div></div>
+        <div className="prof-link-arrow"><I.arrowR/></div>
+      </div>
+    </div>
+
+    <div className="ref-card">
+      <div className="ref-head"><div className="ref-head-icon"><I.gift/></div><div className="ref-title">Refer a creator, earn ₹300</div></div>
+      <div className="ref-sub">When your friend's first deal closes, we credit ₹300 to both of your wallets. No cap.</div>
+      <div className="ref-code-row">
+        <div className="ref-code">{refCode}</div>
+        <button className="ref-copy-btn" onClick={copyRef}>Copy link</button>
+      </div>
+    </div>
+
+    <div className="prof-section"><h3>Contact</h3><div className="rate-table">
+      <div className="rate-row"><span className="rl">Email</span><span className="rv" style={{color:"var(--ink-3)",fontSize:13}}>{googleUser?.email||"—"}</span></div>
+      <div className="rate-row"><span className="rl">Phone</span><span className="rv" style={{color:"var(--ink-3)",fontSize:13}}>{profile?.phone||"—"}</span></div>
+      <div className="rate-row"><span className="rl">UPI</span><span className="rv" style={{color:"var(--ink-3)",fontSize:13}}>{profile?.upi||"—"}</span></div>
+    </div></div>
+
+    <div className="prof-actions">
+      <button className="prof-btn prof-btn-ghost" onClick={onEdit}>Edit Profile</button>
+      <button className="prof-btn prof-btn-solid" onClick={onRateCard}>Set Rate Card</button>
+    </div>
+    <div style={{padding:"0 20px 30px"}}>
+      <button className="prof-btn" style={{width:"100%",background:"transparent",border:"1px solid var(--border-2)",color:"var(--ink-3)",fontSize:13}} onClick={onLogout}>Log out</button>
+      <p style={{textAlign:"center",fontSize:11,color:"var(--ink-4)",marginTop:16}}>Fluence · v1.0 · app.fluence.lol</p>
+    </div>
+  </div>;
+}
+
+/* ── NOTIFICATIONS ── */
+function Notifications(){
+  return <div className="fade-in">
+    <div className="page-head"><h1>Notifications</h1><p>Stay updated on brand activity</p></div>
+    <div className="notif-list">{NOTIFS.map(n=><div key={n.id} className={"notif-item"+(n.unread?" unread":"")}>
+      <div className="ni-icon" style={{background:n.bg}}>{n.emoji}</div>
+      <div className="ni-body"><p dangerouslySetInnerHTML={{__html:n.text}}/><div className="ni-time">{n.time}</div></div>
+      {n.unread&&<div className="ni-dot"/>}
+    </div>)}</div>
+  </div>;
+}
+
+/* ── AUTH FLOW ── */
+function Splash({onGoogleSignIn,loading,error}){
+  return <div className="auth-screen">
+    <div className="splash">
+      <div className="splash-logo" style={{background:"transparent",boxShadow:"0 20px 50px rgba(232,85,58,0.35)",padding:0}}><LogoMark size={88}/></div>
+      <h1 className="splash-title">fluence</h1>
+      <p className="splash-sub">Where local creators meet local brands. Get paid deals in your city.</p>
+      <div className="splash-cta">
+        <button className="auth-btn" onClick={onGoogleSignIn} disabled={loading}
+          style={{background:"#fff",color:"#1C1917",border:"1.5px solid #E7E5E4",boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}}>
+          {loading?"Signing in...":<><svg width="18" height="18" viewBox="0 0 18 18" style={{flexShrink:0}}>
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+            <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>Continue with Google</>}
+        </button>
+        {error&&<p style={{color:"#E8553A",fontSize:13,marginTop:8,textAlign:"center"}}>{error}</p>}
+        <p className="auth-foot" style={{marginTop:16}}>By continuing, you agree to our <span>Terms</span> and <span>Privacy Policy</span></p>
+        <p className="auth-foot" style={{marginTop:8}}>Need help? <a href="https://wa.me/918815621916?text=Hi%20Fluence%20—%20I%20need%20help" target="_blank" style={{color:"#E8553A",textDecoration:"none",fontWeight:600}}>WhatsApp +91 88156 21916</a></p>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── ONBOARDING: STEP 1 — name, handle, followers ── */
+function OnboardStep1({profile,setProfile,onNext,onBack,error,clearError}){
+  const upd=(k,v)=>{setProfile(p=>({...p,[k]:v}));if(error)clearError();};
+  return <div className="auth-screen" style={{paddingTop:20,paddingBottom:24}}>
+    <button className="auth-back" onClick={onBack}><I.arrowL/></button>
+    <div className="auth-content" style={{overflowY:"auto"}}>
+      <div className="step-count">Step 1 of 3</div>
+      <div className="stepper"><div className="step-pip on"/><div className="step-pip"/><div className="step-pip"/></div>
+      <h1 className="auth-title" style={{fontSize:28}}>Who are you?</h1>
+      <p className="auth-sub">Your public identity. Brands see this first.</p>
+      <div className={"ps-avatar-picker"+(profile.name?" filled":"")}>
+        {profile.name?profile.name[0].toUpperCase():"+ Photo"}
+      </div>
+      <div className="ps-field">
+        <label className="ps-label">Full name</label>
+        <input className="ps-input" placeholder="Ayush Shivhare" value={profile.name} onChange={e=>upd("name",e.target.value)}/>
+      </div>
+      <div className="ps-field">
+        <label className="ps-label">Instagram handle</label>
+        <input className="ps-input" placeholder="@ayush_creates" value={profile.handle} onChange={e=>upd("handle",e.target.value.replace(/\s/g,""))}/>
+      </div>
+      <div className="ps-field">
+        <label className="ps-label">Follower count <span style={{color:"#A8A29E",fontWeight:500,fontSize:12}}>· roughly</span></label>
+        <div className="ps-niches">
+          {["Under 1K","1K-5K","5K-25K","25K-100K","100K+"].map(r=><button key={r} className={"ps-niche"+(profile.followers===r?" on":"")} onClick={()=>upd("followers",r)}>{r}</button>)}
+        </div>
+      </div>
+      {error&&<p style={{color:"#E8553A",fontSize:13,marginTop:8,marginBottom:12}}>{error}</p>}
+      <button className="auth-btn accent" style={{marginTop:12}} onClick={onNext}>Continue<I.arrowR/></button>
+    </div>
+  </div>;
+}
+
+/* ── ONBOARDING: STEP 2 — city, niches, bio ── */
+function OnboardStep2({profile,setProfile,onNext,onBack,error,clearError}){
+  const toggleNiche=n=>{setProfile(p=>({...p,niches:p.niches.includes(n)?p.niches.filter(x=>x!==n):[...p.niches,n].slice(0,5)}));if(error)clearError();};
+  const CITIES=["Gwalior","Indore","Bhopal","Jaipur","Lucknow","Delhi","Mumbai","Other"];
+  return <div className="auth-screen" style={{paddingTop:20,paddingBottom:24}}>
+    <button className="auth-back" onClick={onBack}><I.arrowL/></button>
+    <div className="auth-content" style={{overflowY:"auto"}}>
+      <div className="step-count">Step 2 of 3</div>
+      <div className="stepper"><div className="step-pip on"/><div className="step-pip on"/><div className="step-pip"/></div>
+      <h1 className="auth-title" style={{fontSize:28}}>What's your vibe?</h1>
+      <p className="auth-sub">Pick your city and up to 5 niches. Brands match you by these tags.</p>
+      <div className="ps-field">
+        <label className="ps-label">Your city</label>
+        <div className="ps-niches">
+          {CITIES.map(c=><button key={c} className={"ps-niche"+(profile.city===c?" on":"")} onClick={()=>setProfile(p=>({...p,city:c}))}>{c}</button>)}
+        </div>
+      </div>
+      <div className="ps-field">
+        <label className="ps-label">Your niches <span style={{color:"#A8A29E",fontWeight:500,fontSize:12}}>· pick up to 5 ({profile.niches.length}/5)</span></label>
+        <div className="ps-niches">
+          {NICHES_ALL.map(n=><button key={n} className={"ps-niche"+(profile.niches.includes(n)?" on":"")} onClick={()=>toggleNiche(n)}>{n}</button>)}
+        </div>
+      </div>
+      <div className="ps-field">
+        <label className="ps-label">Short bio <span style={{color:"#A8A29E",fontWeight:500,fontSize:12}}>· optional</span></label>
+        <textarea className="ps-textarea" placeholder="Food & lifestyle creator in Gwalior. Love cafes, sarees, and golden-hour shoots." value={profile.bio} onChange={e=>setProfile(p=>({...p,bio:e.target.value.slice(0,160)}))}/>
+        <p style={{fontSize:11,color:"#A8A29E",marginTop:4,textAlign:"right"}}>{profile.bio.length}/160</p>
+      </div>
+      {error&&<p style={{color:"#E8553A",fontSize:13,marginTop:8,marginBottom:12}}>{error}</p>}
+      <button className="auth-btn accent" style={{marginTop:12}} onClick={onNext}>Continue<I.arrowR/></button>
+    </div>
+  </div>;
+}
+
+/* ── ONBOARDING: STEP 3 — payouts + terms ── */
+function OnboardStep3({profile,setProfile,onNext,onBack,loading,error}){
+  return <div className="auth-screen" style={{paddingTop:20,paddingBottom:24}}>
+    <button className="auth-back" onClick={onBack}><I.arrowL/></button>
+    <div className="auth-content" style={{overflowY:"auto"}}>
+      <div className="step-count">Step 3 of 3</div>
+      <div className="stepper"><div className="step-pip on"/><div className="step-pip on"/><div className="step-pip on"/></div>
+      <h1 className="auth-title" style={{fontSize:28}}>Where do we pay?</h1>
+      <p className="auth-sub">UPI is instant. Phone is how brands reach you urgently. Both private.</p>
+      <div className="ps-field">
+        <label className="ps-label">WhatsApp number</label>
+        <input className="ps-input" type="tel" placeholder="98765 43210" value={profile.phone} onChange={e=>setProfile(p=>({...p,phone:e.target.value.replace(/[^\d]/g,"").slice(0,10)}))}/>
+      </div>
+      <div className="ps-field">
+        <label className="ps-label">UPI ID <span style={{color:"#A8A29E",fontWeight:500,fontSize:12}}>· optional, add later</span></label>
+        <input className="ps-input" placeholder="yourname@oksbi" value={profile.upi} onChange={e=>setProfile(p=>({...p,upi:e.target.value.trim()}))}/>
+      </div>
+      <label className="ps-checkbox">
+        <input type="checkbox" checked={profile.termsAccepted} onChange={e=>setProfile(p=>({...p,termsAccepted:e.target.checked}))}/>
+        <span>I agree to Fluence's <a href="#" onClick={e=>e.preventDefault()}>Terms</a> and <a href="#" onClick={e=>e.preventDefault()}>Privacy Policy</a>. I'm 18+ and the content I publish will be my own.</span>
+      </label>
+      {error&&<p style={{color:"#E8553A",fontSize:13,marginTop:12,marginBottom:0}}>{error}</p>}
+      <button className="auth-btn accent" style={{marginTop:16}} disabled={loading} onClick={onNext}>
+        {loading?"Creating profile...":<>Finish & Explore Deals<I.arrowR/></>}
+      </button>
+      <p className="auth-foot" style={{marginTop:14}}>Questions? <a href="https://wa.me/918815621916?text=Hi%20Fluence" target="_blank" style={{color:"#E8553A",textDecoration:"none",fontWeight:600}}>WhatsApp +91 88156 21916</a></p>
+    </div>
+  </div>;
+}
+
+/* ── WORKFLOW SHEET — deal progress timeline ── */
+function WorkflowSheet({deal,onClose,onAction}){
+  const current=WORKFLOW_STEPS[deal.stage];
+  return <div className="overlay">
+    <div className="ov-backdrop" onClick={onClose}/>
+    <div className="ov-sheet">
+      <div className="ov-handle"/>
+      <div className="ov-body" style={{paddingTop:8}}>
+        <div className="ov-brand-row">
+          <img className="ov-brand-img" src={deal.img} alt={deal.brand}/>
+          <div><div className="ov-brand-name">{deal.brand}</div><div className="ov-brand-type">{deal.deal} · {deal.earning}</div></div>
+        </div>
+        <div className="ov-section" style={{background:"var(--muted)",borderRadius:"12px",padding:"12px 14px"}}>
+          <h4 style={{marginBottom:6}}>Brand brief</h4>
+          <p style={{fontSize:13,lineHeight:1.55}}>{deal.brief}</p>
+        </div>
+        <h4 style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px",color:"var(--ink-4)",margin:"20px 0 14px"}}>Progress timeline</h4>
+      </div>
+      <div className="wf-timeline">
+        {WORKFLOW_STEPS.map((s,i)=>{
+          const cls=i<deal.stage?"done":i===deal.stage?"current":"";
+          return <div key={s.k} className={"wf-step "+cls}>
+            <div className="wf-dot">{i<deal.stage?<I.check/>:i+1}</div>
+            <div className="wf-body">
+              <div className="wf-title">{s.t}</div>
+              <div className="wf-desc">{s.d}</div>
+              {i===deal.stage&&s.action&&deal.stage<WORKFLOW_STEPS.length-1&&
+                <button className="wf-action" onClick={onAction}>{s.action}</button>}
+              {i===deal.stage&&!s.action&&deal.stage<WORKFLOW_STEPS.length-1&&
+                <button className="wf-action ghost" onClick={onAction}>Mark as done</button>}
+            </div>
+          </div>;
+        })}
+      </div>
+      <div style={{padding:"0 22px 28px"}}>
+        <button className="prof-btn prof-btn-ghost" style={{width:"100%"}} onClick={()=>window.open("https://wa.me/918815621916?text=Hi%20Fluence%20%E2%80%94%20question%20about%20the%20"+encodeURIComponent(deal.brand)+"%20deal","_blank")}>Message brand / support</button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── CHAT SHEET ── */
+function ChatSheet({thread,onClose,onSend}){
+  const[input,setInput]=useState("");
+  const inputRef=useRef(null);
+  const submit=()=>{if(!input.trim())return;onSend(input);setInput("");};
+  return <div className="overlay">
+    <div className="ov-backdrop" onClick={onClose}/>
+    <div className="ov-sheet" style={{maxHeight:"92vh",display:"flex",flexDirection:"column"}}>
+      <div className="ov-handle"/>
+      <div className="chat-header">
+        <button className="icon-btn" style={{border:"none",width:30,height:30}} onClick={onClose}><I.arrowL/></button>
+        <img className="chat-img" src={thread.img} alt={thread.brand}/>
+        <div style={{flex:1}}>
+          <div className="chat-name">{thread.brand}</div>
+          <div className="chat-meta">Usually replies within 4 hours</div>
+        </div>
+      </div>
+      <div className="chat-body" style={{flex:1,overflowY:"auto"}}>
+        {thread.messages.map((m,i)=><div key={i} className={"bubble "+m.from}>
+          <div>{m.t}</div>
+          <div className="bubble-time">{m.time}</div>
+        </div>)}
+      </div>
+      <div className="chat-compose">
+        <input ref={inputRef} placeholder="Type a message..." value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submit();}}/>
+        <button className="chat-send-btn" onClick={submit}><I.send/></button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── WITHDRAW SHEET ── */
+function WithdrawSheet({upi,balance,onClose,onConfirm}){
+  const[amt,setAmt]=useState(balance);
+  return <div className="overlay">
+    <div className="ov-backdrop" onClick={onClose}/>
+    <div className="ov-sheet">
+      <div className="ov-handle"/>
+      <div className="sheet-inner">
+        <h2 className="sheet-title">Withdraw to UPI</h2>
+        <p className="sheet-sub">Instant transfer. Typically reflects in 3 working hours.</p>
+        <div className="upi-hero">
+          <div className="upi-hero-label">UPI ID</div>
+          <div className="upi-hero-val">{upi||"Not set — add in Profile → Edit"}</div>
+        </div>
+        <label className="ps-label" style={{display:"block",marginBottom:10}}>Amount</label>
+        <input className="amount-input" type="number" value={amt} onChange={e=>setAmt(Math.min(balance,Math.max(0,Number(e.target.value)||0)))} placeholder="0"/>
+        <div className="amount-chips">
+          {[500,1000,2500,balance].filter((v,i,a)=>v>0&&a.indexOf(v)===i).slice(0,4).map(v=>
+            <button key={v} className="amount-chip" onClick={()=>setAmt(v)}>₹{v===balance?"Max":v.toLocaleString('en-IN')}</button>
+          )}
+        </div>
+        <p style={{fontSize:12,color:"var(--ink-4)",marginBottom:14}}>Available balance: <strong style={{color:"var(--ink)"}}>₹{balance.toLocaleString('en-IN')}</strong></p>
+        <button className="apply-full" disabled={!amt||amt<=0||!upi} onClick={()=>onConfirm(amt)} style={{opacity:(!amt||!upi)?0.5:1}}>
+          {upi?`Withdraw ₹${amt.toLocaleString('en-IN')}`:"Add UPI in Profile first"}
+        </button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── EDIT PROFILE SHEET ── */
+function EditProfileSheet({profile,setProfile,onClose,onSave}){
+  const toggleNiche=n=>setProfile(p=>({...p,niches:p.niches.includes(n)?p.niches.filter(x=>x!==n):[...p.niches,n].slice(0,5)}));
+  const CITIES=["Gwalior","Indore","Bhopal","Jaipur","Lucknow","Delhi","Mumbai","Other"];
+  return <div className="overlay">
+    <div className="ov-backdrop" onClick={onClose}/>
+    <div className="ov-sheet">
+      <div className="ov-handle"/>
+      <div className="sheet-inner">
+        <h2 className="sheet-title">Edit Profile</h2>
+        <p className="sheet-sub">Changes save to your profile instantly.</p>
+        <div className="ps-field">
+          <label className="ps-label">Full name</label>
+          <input className="ps-input" value={profile.name} onChange={e=>setProfile(p=>({...p,name:e.target.value}))}/>
+        </div>
+        <div className="ps-field">
+          <label className="ps-label">Instagram handle</label>
+          <input className="ps-input" value={profile.handle} onChange={e=>setProfile(p=>({...p,handle:e.target.value.replace(/\s/g,"")}))}/>
+        </div>
+        <div className="ps-field">
+          <label className="ps-label">Follower count</label>
+          <div className="ps-niches">
+            {["Under 1K","1K-5K","5K-25K","25K-100K","100K+"].map(r=><button key={r} className={"ps-niche"+(profile.followers===r?" on":"")} onClick={()=>setProfile(p=>({...p,followers:r}))}>{r}</button>)}
+          </div>
+        </div>
+        <div className="ps-field">
+          <label className="ps-label">City</label>
+          <div className="ps-niches">
+            {CITIES.map(c=><button key={c} className={"ps-niche"+(profile.city===c?" on":"")} onClick={()=>setProfile(p=>({...p,city:c}))}>{c}</button>)}
+          </div>
+        </div>
+        <div className="ps-field">
+          <label className="ps-label">Niches ({profile.niches.length}/5)</label>
+          <div className="ps-niches">
+            {NICHES_ALL.map(n=><button key={n} className={"ps-niche"+(profile.niches.includes(n)?" on":"")} onClick={()=>toggleNiche(n)}>{n}</button>)}
+          </div>
+        </div>
+        <div className="ps-field">
+          <label className="ps-label">Bio</label>
+          <textarea className="ps-textarea" value={profile.bio} onChange={e=>setProfile(p=>({...p,bio:e.target.value.slice(0,160)}))}/>
+        </div>
+        <div className="ps-field">
+          <label className="ps-label">WhatsApp</label>
+          <input className="ps-input" type="tel" value={profile.phone} onChange={e=>setProfile(p=>({...p,phone:e.target.value.replace(/[^\d]/g,"").slice(0,10)}))}/>
+        </div>
+        <div className="ps-field">
+          <label className="ps-label">UPI ID</label>
+          <input className="ps-input" value={profile.upi} onChange={e=>setProfile(p=>({...p,upi:e.target.value.trim()}))}/>
+        </div>
+        <button className="apply-full" onClick={onSave}>Save changes</button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── RATE CARD SHEET ── */
+function RateCardSheet({rates,setRates,onClose,onSave}){
+  const upd=(k,v)=>setRates(r=>({...r,[k]:v.replace(/[^\d]/g,"")}));
+  const items=[
+    {k:"reel",t:"Instagram Reel",hint:"30-60 sec reel with hook + CTA"},
+    {k:"story",t:"Instagram Story",hint:"3-5 frame story sequence"},
+    {k:"yt",t:"YouTube Video",hint:"Integration or standalone, 1-3 min"},
+    {k:"bundle",t:"Bundle (Reel + 2 Stories)",hint:"Most common brand ask"},
+  ];
+  return <div className="overlay">
+    <div className="ov-backdrop" onClick={onClose}/>
+    <div className="ov-sheet">
+      <div className="ov-handle"/>
+      <div className="sheet-inner">
+        <h2 className="sheet-title">Your Rate Card</h2>
+        <p className="sheet-sub">What you charge per deliverable. Brands see this upfront — no haggling.</p>
+        {items.map(it=><div key={it.k} style={{marginBottom:14}}>
+          <div className="rate-edit-row">
+            <div>
+              <div className="rl" style={{fontWeight:600,color:"var(--ink)"}}>{it.t}</div>
+              <div style={{fontSize:11,color:"var(--ink-4)",marginTop:2}}>{it.hint}</div>
+            </div>
+            <input type="text" inputMode="numeric" placeholder="₹5000" value={rates[it.k]?"₹"+rates[it.k]:""} onChange={e=>upd(it.k,e.target.value)}/>
+          </div>
+        </div>)}
+        <div style={{background:"var(--flame-soft)",padding:"12px 14px",borderRadius:10,fontSize:12.5,color:"var(--flame)",marginBottom:16,lineHeight:1.55}}>
+          <strong>Tip:</strong> Most Gwalior micro-creators charge ₹1,500-₹5,000 per reel. Underpricing hurts — start higher, negotiate down.
+        </div>
+        <button className="apply-full" onClick={onSave}>Save rate card</button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── SUPPORT / FAQ SHEET ── */
+function SupportSheet({onClose}){
+  const[openIdx,setOpenIdx]=useState(-1);
+  return <div className="overlay">
+    <div className="ov-backdrop" onClick={onClose}/>
+    <div className="ov-sheet">
+      <div className="ov-handle"/>
+      <div className="sheet-inner">
+        <h2 className="sheet-title">Help & Support</h2>
+        <p className="sheet-sub">Real humans on WhatsApp. 4-hour response time.</p>
+        <button className="apply-full" style={{background:"#25D366",marginBottom:16}} onClick={()=>window.open("https://wa.me/918815621916?text=Hi%20Fluence%20%E2%80%94%20I%20need%20help","_blank")}>
+          <span style={{display:"inline-flex",alignItems:"center",gap:8}}><I.whatsapp/> WhatsApp us +91 88156 21916</span>
+        </button>
+        <h4 style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px",color:"var(--ink-4)",margin:"18px 0 8px"}}>Frequently asked</h4>
+        <div>
+          {FAQ.map((f,i)=><div key={i} className={"faq-item"+(openIdx===i?" open":"")}>
+            <div className="faq-q" onClick={()=>setOpenIdx(openIdx===i?-1:i)}>
+              <span>{f.q}</span>
+              <span className="faq-q-arrow">+</span>
+            </div>
+            <div className="faq-a">{f.a}</div>
+          </div>)}
+        </div>
+        <p style={{fontSize:12,color:"var(--ink-4)",textAlign:"center",marginTop:20}}>Email: <a href="mailto:hello@fluence.lol" style={{color:"var(--flame)",textDecoration:"none"}}>hello@fluence.lol</a></p>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── SERVICES SHEET (hire freelancers — moved from tab) ── */
+function ServicesSheet({onClose,hangTight}){
+  return <div className="overlay">
+    <div className="ov-backdrop" onClick={onClose}/>
+    <div className="ov-sheet">
+      <div className="ov-handle"/>
+      <div className="sheet-inner">
+        <h2 className="sheet-title">Hire Freelancers</h2>
+        <p className="sheet-sub">Editors, photographers, scriptwriters. Pay with your Fluence wallet.</p>
+        <div className="svc-grid" style={{padding:0}}>{SVCS.map((s,i)=><div key={i} className="svc-card" style={{margin:0}} onClick={()=>hangTight("Booking "+s.name)}>
+          <img className="svc-img" src={s.img} alt={s.name} loading="lazy"/>
+          <div className="svc-body"><h3>{s.name}</h3><p>{s.desc}</p><div className="svc-price">{s.price}<span>{s.unit}</span></div></div>
+        </div>)}</div>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── LOGO MARK (real SVG) ── */
+function LogoMark({size=32}){
+  return <svg width={size} height={size} viewBox="0 0 56 56" fill="none" style={{display:"block",borderRadius:Math.round(size*0.29)}}>
+    <defs>
+      <linearGradient id={"flame"+size} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#F97316"/>
+        <stop offset="55%" stopColor="#E8553A"/>
+        <stop offset="100%" stopColor="#C2410C"/>
+      </linearGradient>
+    </defs>
+    <rect width="56" height="56" rx="16" fill={`url(#flame${size})`}/>
+    <path d="M28 11 C34 17, 39 21, 39 29 C39 36, 34 42, 28 42 C22 42, 17 37, 17 30 C17 25, 19 22, 23 19 C22 23, 23 26, 26 27 C25 24, 26 21, 28 18 Z" fill="#FFFFFF" opacity="0.96"/>
+    <path d="M28 22 C31 24, 33 27, 33 30 C33 33, 31 35, 28 35 C26 35, 23 33, 23 30 C23 28, 25 27, 26 25 Z" fill={`url(#flame${size})`}/>
+  </svg>;
+}
+
+/* ── TOASTER ── */
+function Toaster({toasts}){
+  if(!toasts||!toasts.length)return null;
+  return <div className="toast-wrap">
+    {toasts.map(t=>{
+      const icon=t.kind==="success"?<I.check/>:t.kind==="warn"?<I.zap/>:t.kind==="err"?<I.circle/>:<I.spark/>;
+      return <div key={t.id} className={"toast "+t.kind}>{icon}<span>{t.msg}</span></div>;
+    })}
+  </div>;
+}
+
+/* ── GENERIC MODAL ── */
+function GenericModal({title,body,cta,onCta,onClose,danger}){
+  return <div className="modal-back" onClick={onClose}>
+    <div className="modal" onClick={e=>e.stopPropagation()}>
+      <h3>{title}</h3>
+      <p>{body}</p>
+      <div style={{display:"flex",gap:8}}>
+        <button className="prof-btn prof-btn-ghost" style={{flex:1,padding:"14px"}} onClick={onClose}>Cancel</button>
+        <button className="auth-btn" style={{flex:1,height:"auto",padding:"14px",background:danger?"#DC2626":"#1C1917",boxShadow:danger?"0 8px 20px rgba(220,38,38,0.25)":"0 8px 20px rgba(28,25,23,0.15)"}} onClick={()=>{onCta?.();onClose()}}>{cta||"Got it"}</button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── Normalize a deal from Google Sheets (fill in missing fields with safe defaults) ── */
+function normalizeDeal(d){
+  return {
+    id: d.id || Math.random().toString(36).slice(2,8),
+    brand: d.brand || "Brand",
+    brandType: d.brandType || "",
+    area: d.area || "",
+    brandImg: d.brandImg || "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=100&h=100&fit=crop",
+    coverImg: d.coverImg || d.brandImg || "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&h=400&fit=crop",
+    title: d.title || "New brand deal",
+    category: d.category || "Food",
+    city: d.city || "Gwalior",
+    platform: d.platform || "Instagram",
+    deliverables: d.deliverables || "1 Reel",
+    pay: d.pay || "₹—",
+    badge: d.badge || "new",
+    deadline: d.deadline || "",
+    desc: d.desc || "",
+    followers: d.followers || "Any",
+    saved: false,
+    applied: false
+  };
+}
+
+ReactDOM.render(<App/>,document.getElementById("root"));
+</script>
+</body>
+</html>
