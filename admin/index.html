@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Fluence Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Instrument+Serif&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+window.FLUENCE = {
+  API_URL: "",
+  FIREBASE_CONFIG: {
+    apiKey: "AIzaSyAdYXsBDlBgqCUgP6hO1X2Jqrpg29Ty6Q8",
+    authDomain: "fluence-30036.firebaseapp.com",
+    projectId: "fluence-30036",
+    storageBucket: "fluence-30036.firebasestorage.app",
+    messagingSenderId: "1067386355557",
+    appId: "1:1067386355557:web:7d3a9b43000276de45eb8c",
+  },
+  // Only emails in this list can access admin. Edit to add team members.
+  ADMIN_EMAILS: ["ayushshivhare02@gmail.com"],
+};
+
+firebase.initializeApp(window.FLUENCE.FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db = firebase.firestore();
+</script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#FAFAF9; --card:#fff; --ink:#0C0A09; --ink-2:#292524; --ink-3:#78716C; --ink-4:#A8A29E;
+  --border:#F0EDE8; --border-2:#E8E4DE; --muted:#F5F3F0;
+  --flame:#E8553A; --flame-2:#C2410C; --flame-soft:#FFF1EC;
+  --emerald:#059669; --emerald-soft:#ECFDF5;
+  --danger:#DC2626; --danger-soft:#FEE2E2;
+  --butter:#FEF3C7;
+}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:15px;color:inherit;background:none;border:none;outline:none;width:100%}
+
+.wrap{max-width:1200px;margin:0 auto;padding:24px}
+.serif{font-family:'Instrument Serif',serif;font-weight:400;font-style:italic}
+
+/* ── Top bar ── */
+.bar{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:#fff;border:1px solid var(--border);border-radius:18px;margin-bottom:24px}
+.bar .brand{display:flex;align-items:center;gap:12px}
+.bar .brand .mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#FF7A4A,#C2410C);display:flex;align-items:center;justify-content:center}
+.bar .brand .mark svg{width:20px;height:20px;color:#fff}
+.bar .brand .t{font-weight:800;font-size:18px;letter-spacing:-.5px}
+.bar .brand .st{font-size:11px;color:var(--flame);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:-2px}
+.bar .who{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-3);font-weight:500}
+.bar .who .av{width:32px;height:32px;border-radius:8px;background:var(--flame-soft);color:var(--flame);display:flex;align-items:center;justify-content:center;font-weight:800;overflow:hidden}
+.bar .who .av img{width:100%;height:100%;object-fit:cover}
+.bar .who button{padding:8px 14px;border-radius:999px;background:var(--muted);font-size:12px;font-weight:700;color:var(--ink-2)}
+.bar .who button:hover{background:var(--border-2)}
+
+/* ── Gate ── */
+.gate{max-width:440px;margin:80px auto;padding:36px 28px;background:#fff;border:1px solid var(--border);border-radius:22px;text-align:center}
+.gate h1{font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:10px}
+.gate p{color:var(--ink-3);font-size:14px;font-weight:500;margin-bottom:24px;line-height:1.5}
+.google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;border:1px solid var(--border-2);padding:14px 22px;border-radius:12px;font-weight:700;font-size:14px;transition:transform .15s}
+.google-btn:active{transform:scale(.98)}
+.google-btn:hover{background:var(--muted)}
+.google-btn svg{width:18px;height:18px}
+
+/* ── Layout ── */
+.grid{display:grid;grid-template-columns:420px 1fr;gap:24px}
+@media(max-width:960px){.grid{grid-template-columns:1fr}}
+
+/* ── Cards ── */
+.card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:24px}
+.card h2{font-size:18px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.card .sub{font-size:13px;color:var(--ink-3);font-weight:500;margin-bottom:20px}
+
+/* ── Form ── */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--ink-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.field .input{background:#fff;border:1px solid var(--border-2);border-radius:11px;padding:12px 14px;display:flex;align-items:center;gap:8px;transition:border-color .15s}
+.field .input:focus-within{border-color:var(--flame)}
+.field textarea{min-height:90px;resize:vertical;line-height:1.5}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:8px 12px;border-radius:999px;background:#fff;border:1px solid var(--border-2);font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;transition:all .15s}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+.btn-primary{width:100%;background:var(--flame);color:#fff;padding:14px 24px;border-radius:999px;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s,transform .15s}
+.btn-primary:active{transform:scale(.99)}
+.btn-primary:hover{background:var(--flame-2)}
+.btn-primary:disabled{background:var(--ink-4);cursor:not-allowed}
+.btn-ghost{background:var(--muted);color:var(--ink-2);padding:10px 16px;border-radius:999px;font-weight:700;font-size:12px;transition:background .15s}
+.btn-ghost:hover{background:var(--border-2)}
+
+/* ── Deals table ── */
+.deal-item{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--border);border-radius:14px;margin-bottom:10px;background:#fff}
+.deal-item .cover{width:54px;height:54px;border-radius:10px;background:linear-gradient(135deg,#FFF1EC,#FED7AA);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--flame);font-weight:800;overflow:hidden}
+.deal-item .cover img{width:100%;height:100%;object-fit:cover}
+.deal-item .mid{flex:1;min-width:0}
+.deal-item .brand{font-size:14px;font-weight:800}
+.deal-item .ttl{font-size:13px;color:var(--ink-3);font-weight:500;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.deal-item .pay{font-size:16px;font-weight:800;color:var(--emerald);margin-left:12px}
+.deal-item .st{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px;flex-shrink:0}
+.st.live{background:var(--emerald-soft);color:var(--emerald)}
+.st.closed{background:var(--muted);color:var(--ink-3)}
+.st.paused{background:var(--butter);color:#B45309}
+.deal-item .actions{display:flex;gap:6px;flex-shrink:0}
+.deal-item .actions button{padding:6px 10px;border-radius:8px;background:var(--muted);font-size:11px;font-weight:700}
+.deal-item .actions button.danger{background:var(--danger-soft);color:var(--danger)}
+.deal-item .actions button.danger:hover{background:#FCA5A5}
+
+/* ── Stats ── */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.stat-box{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.stat-box .l{font-size:11px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.stat-box .v{font-size:24px;font-weight:800;letter-spacing:-.6px;margin-top:4px}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--border-2)}
+.admin-tab{padding:10px 14px;font-size:13px;font-weight:700;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px}
+.admin-tab.on{color:var(--flame);border-bottom-color:var(--flame)}
+.admin-tab:hover{color:var(--ink)}
+
+/* ── Toast ── */
+.toast{position:fixed;top:20px;right:20px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:40;box-shadow:0 10px 30px -10px rgba(0,0,0,.3);animation:toast-in .2s ease}
+@keyframes toast-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+.empty{text-align:center;padding:40px 24px;color:var(--ink-3);font-size:14px;font-weight:500}
+.empty .big{font-size:40px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const el = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; };
+const fmt = (n) => "₹" + Number(n || 0).toLocaleString('en-IN');
+const niceDate = (d) => {
+  if (!d) return "";
+  const x = d.toDate ? d.toDate() : new Date(d);
+  return x.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+};
+const initials = (name = "") => name.trim().split(/\s+/).slice(0, 2).map(s => s[0] || "").join("").toUpperCase() || "A";
+
+const NICHES = ["Food", "Fashion", "Fitness", "Beauty", "Travel", "Tech", "Lifestyle", "Finance", "Gaming", "Music"];
+
+const state = {
+  user: null,
+  ui: "loading",  // loading | gate | denied | app
+  tab: "deals",   // deals | users | applications
+  deals: [],
+  users: [],
+  applications: [],
+  editing: null,  // null or deal being edited
+  form: {
+    brand: "", title: "", pay: "", payNote: "cash", niche: "Food",
+    description: "", deadline: "", location: "Gwalior", image: "", status: "live",
+  },
+};
+
+function toast(msg) {
+  const t = el(`<div class="toast">${msg}</div>`);
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
+async function mirror(action, payload) {
+  if (!window.FLUENCE.API_URL) return;
+  try {
+    await fetch(window.FLUENCE.API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ action, payload }),
+    });
+  } catch (e) { console.warn("mirror failed", e); }
+}
+
+// ════════════════════════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════════════════════════
+async function signInWithGoogle() {
+  try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+  catch (e) { console.error(e); toast("Sign-in failed"); }
+}
+
+// ════════════════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════════════════
+async function loadDeals() {
+  try {
+    const snap = await db.collection("deals").orderBy("createdAt", "desc").limit(50).get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    const snap = await db.collection("deals").limit(50).get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+}
+async function loadUsers() {
+  try {
+    const snap = await db.collection("users").orderBy("createdAt", "desc").limit(50).get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    const snap = await db.collection("users").limit(50).get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+}
+async function loadApplications() {
+  try {
+    const snap = await db.collection("applications").orderBy("createdAt", "desc").limit(80).get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    const snap = await db.collection("applications").limit(80).get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+}
+
+async function saveDeal() {
+  const f = state.form;
+  if (!f.brand.trim() || !f.title.trim() || !f.pay) {
+    toast("Fill brand, title and pay");
+    return;
+  }
+  const data = {
+    brand: f.brand.trim(),
+    title: f.title.trim(),
+    pay: Number(f.pay) || 0,
+    payNote: f.payNote.trim(),
+    niche: f.niche,
+    description: f.description.trim(),
+    deadline: f.deadline.trim(),
+    location: f.location.trim(),
+    image: f.image.trim(),
+    status: f.status,
+    postedBy: state.user.email,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+  let dealId;
+  if (state.editing) {
+    dealId = state.editing;
+    await db.collection("deals").doc(dealId).set(data, { merge: true });
+  } else {
+    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    data.applicantCount = 0;
+    const ref = await db.collection("deals").add(data);
+    dealId = ref.id;
+  }
+  await mirror(state.editing ? "updateDeal" : "newDeal", { id: dealId, ...data, createdAt: new Date().toISOString() });
+  toast(state.editing ? "Deal updated" : "Deal posted!");
+  state.editing = null;
+  resetForm();
+  state.deals = await loadDeals();
+  render();
+}
+
+async function toggleDealStatus(id, nextStatus) {
+  await db.collection("deals").doc(id).update({ status: nextStatus, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  await mirror("updateDealStatus", { id, status: nextStatus });
+  state.deals = await loadDeals();
+  render();
+  toast(`Deal ${nextStatus}`);
+}
+
+function editDeal(id) {
+  const d = state.deals.find(x => x.id === id);
+  if (!d) return;
+  state.editing = id;
+  state.form = {
+    brand: d.brand || "", title: d.title || "", pay: d.pay || "",
+    payNote: d.payNote || "cash", niche: d.niche || "Food",
+    description: d.description || "", deadline: d.deadline || "",
+    location: d.location || "Gwalior", image: d.image || "", status: d.status || "live",
+  };
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function resetForm() {
+  state.form = {
+    brand: "", title: "", pay: "", payNote: "cash", niche: "Food",
+    description: "", deadline: "", location: "Gwalior", image: "", status: "live",
+  };
+}
+
+async function updateAppStatus(appId, status) {
+  await db.collection("applications").doc(appId).update({ status, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  await mirror("updateApplicationStatus", { id: appId, status });
+  state.applications = await loadApplications();
+  render();
+  toast(`Marked ${status}`);
+}
+
+// ════════════════════════════════════════════════════════════
+// UI
+// ════════════════════════════════════════════════════════════
+function renderGate() {
+  return `
+    <div class="wrap">
+      <div class="gate">
+        <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#FF7A4A,#C2410C);margin:0 auto 20px;display:flex;align-items:center;justify-content:center">
+          <svg width="32" height="32" viewBox="0 0 48 48" fill="none"><path d="M24 6 C30 18, 42 22, 38 34 C36 42, 28 44, 24 44 C20 44, 12 42, 10 34 C6 22, 18 18, 24 6 Z" fill="#fff"/></svg>
+        </div>
+        <h1>Fluence Admin</h1>
+        <p>Sign in with an approved Google account to post deals and manage creators.</p>
+        <button class="google-btn" id="si">
+          <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M21.35 11.1H12v2.9h5.4c-.25 1.5-1.8 4.4-5.4 4.4-3.25 0-5.9-2.7-5.9-6s2.65-6 5.9-6c1.85 0 3.1.8 3.8 1.5l2.6-2.5C16.75 3.8 14.6 3 12 3 6.9 3 2.75 7.15 2.75 12.2S6.9 21.4 12 21.4c6.9 0 9.6-4.85 9.6-7.35 0-.5-.05-.9-.15-1.35z"/></svg>
+          <span>Continue with Google</span>
+        </button>
+      </div>
+    </div>`;
+}
+
+function renderDenied() {
+  return `
+    <div class="wrap">
+      <div class="gate">
+        <h1 style="color:var(--danger)">Access denied</h1>
+        <p>${state.user?.email || "Your account"} isn't on the admin list. Ask Ayush to add you to ADMIN_EMAILS.</p>
+        <button class="btn-ghost" id="so">Sign out</button>
+      </div>
+    </div>`;
+}
+
+function renderBar() {
+  const u = state.user;
+  const av = u?.photoURL ? `<img src="${u.photoURL}">` : initials(u?.displayName || u?.email);
+  return `
+    <div class="bar">
+      <div class="brand">
+        <div class="mark">
+          <svg viewBox="0 0 48 48" fill="none"><path d="M24 6 C30 18, 42 22, 38 34 C36 42, 28 44, 24 44 C20 44, 12 42, 10 34 C6 22, 18 18, 24 6 Z" fill="#fff"/></svg>
+        </div>
+        <div>
+          <div class="t">Fluence</div>
+          <div class="st">Admin</div>
+        </div>
+      </div>
+      <div class="who">
+        <div class="av">${av}</div>
+        <span>${u?.displayName || u?.email || ""}</span>
+        <button id="so">Sign out</button>
+      </div>
+    </div>`;
+}
+
+function renderStats() {
+  const liveDeals = state.deals.filter(d => d.status === "live").length;
+  const users = state.users.length;
+  const apps = state.applications.length;
+  return `
+    <div class="stats">
+      <div class="stat-box"><div class="l">Live deals</div><div class="v">${liveDeals}</div></div>
+      <div class="stat-box"><div class="l">Creators</div><div class="v">${users}</div></div>
+      <div class="stat-box"><div class="l">Applications</div><div class="v">${apps}</div></div>
+    </div>`;
+}
+
+function renderForm() {
+  const f = state.form;
+  const isEdit = !!state.editing;
+  return `
+    <div class="card">
+      <h2>${isEdit ? "Edit deal" : "Post a new deal"}</h2>
+      <div class="sub">${isEdit ? "Update the deal details below." : "Creators see this instantly on their feed."}</div>
+
+      <div class="field">
+        <label>Brand name *</label>
+        <div class="input"><input id="i_brand" value="${(f.brand || '').replace(/"/g, '&quot;')}" placeholder="Cafe Jeera"></div>
+      </div>
+
+      <div class="field">
+        <label>Deal title *</label>
+        <div class="input"><input id="i_title" value="${(f.title || '').replace(/"/g, '&quot;')}" placeholder="Reel — Brunch menu launch"></div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Pay (₹) *</label>
+          <div class="input"><input id="i_pay" type="number" inputmode="numeric" value="${f.pay}" placeholder="2500"></div>
+        </div>
+        <div class="field">
+          <label>Pay note</label>
+          <div class="input"><input id="i_paynote" value="${(f.payNote || '').replace(/"/g, '&quot;')}" placeholder="cash + food"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Niche</label>
+        <div class="chips" id="i_niche">
+          ${NICHES.map(n => `<button type="button" class="chip ${n === f.niche ? 'on' : ''}" data-n="${n}">${n}</button>`).join("")}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Description</label>
+        <div class="input"><textarea id="i_desc" placeholder="Shoot a 30s reel featuring our brunch menu…">${f.description || ''}</textarea></div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Deadline</label>
+          <div class="input"><input id="i_deadline" value="${(f.deadline || '').replace(/"/g, '&quot;')}" placeholder="3 days"></div>
+        </div>
+        <div class="field">
+          <label>Location</label>
+          <div class="input"><input id="i_loc" value="${(f.location || '').replace(/"/g, '&quot;')}" placeholder="Gwalior"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Cover image URL (optional)</label>
+        <div class="input"><input id="i_img" value="${(f.image || '').replace(/"/g, '&quot;')}" placeholder="https://…"></div>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <div class="chips" id="i_status">
+          ${["live", "paused", "closed"].map(s => `<button type="button" class="chip ${s === f.status ? 'on' : ''}" data-s="${s}">${s}</button>`).join("")}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:18px">
+        ${isEdit ? `<button class="btn-ghost" id="cancelEdit">Cancel</button>` : ""}
+        <button class="btn-primary" id="save" style="flex:1">
+          <span>${isEdit ? "Save changes" : "Post deal"}</span> <span>→</span>
+        </button>
+      </div>
+    </div>`;
+}
+
+function renderDealsPanel() {
+  return `
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <h2 style="margin-bottom:0">Deals</h2>
+          <div style="font-size:13px;color:var(--ink-3);font-weight:500;margin-top:2px">${state.deals.length} total</div>
+        </div>
+      </div>
+      ${state.deals.length ? state.deals.map(d => {
+        const cover = d.image
+          ? `<img src="${d.image}" alt="">`
+          : (d.brand || "?")[0];
+        return `
+          <div class="deal-item">
+            <div class="cover">${cover}</div>
+            <div class="mid">
+              <div class="brand">${d.brand || "Brand"}</div>
+              <div class="ttl">${d.title || ""}</div>
+            </div>
+            <div class="pay">${fmt(d.pay)}</div>
+            <div class="st ${d.status || 'live'}">${d.status || 'live'}</div>
+            <div class="actions">
+              <button data-edit="${d.id}">Edit</button>
+              ${d.status === "live"
+                ? `<button data-toggle="${d.id}" data-to="paused">Pause</button>`
+                : `<button data-toggle="${d.id}" data-to="live">Go live</button>`}
+              <button class="danger" data-close="${d.id}">Close</button>
+            </div>
+          </div>`;
+      }).join("") : `<div class="empty"><div class="big">🌱</div>No deals yet. Post your first one on the left.</div>`}
+    </div>`;
+}
+
+function renderUsersPanel() {
+  return `
+    <div class="card">
+      <h2>Creators</h2>
+      <div class="sub">${state.users.length} signed up</div>
+      ${state.users.length ? state.users.map(u => `
+        <div class="deal-item">
+          <div class="cover">${u.avatar ? `<img src="${u.avatar}">` : initials(u.name)}</div>
+          <div class="mid">
+            <div class="brand">${u.name || "Creator"}</div>
+            <div class="ttl">@${u.instagram || ""} · ${u.city || ""} · ${u.niche || ""}</div>
+          </div>
+          <div style="font-size:13px;color:var(--ink-3);font-weight:500;margin-right:10px">+91 ${u.phone || ""}</div>
+          <div style="font-size:13px;color:var(--ink-3);font-weight:500">${niceDate(u.createdAt)}</div>
+        </div>`).join("") : `<div class="empty"><div class="big">👤</div>No creators yet. Share the signup link!</div>`}
+    </div>`;
+}
+
+function renderAppsPanel() {
+  return `
+    <div class="card">
+      <h2>Applications</h2>
+      <div class="sub">${state.applications.length} total</div>
+      ${state.applications.length ? state.applications.map(a => `
+        <div class="deal-item">
+          <div class="cover">${(a.brand || "?")[0]}</div>
+          <div class="mid">
+            <div class="brand">${a.creatorName || "Creator"} → ${a.brand || "Brand"}</div>
+            <div class="ttl">${a.title || ""} · @${a.creatorHandle || ""} · +91 ${a.creatorPhone || ""}</div>
+          </div>
+          <div class="pay">${fmt(a.pay)}</div>
+          <div class="st ${a.status || 'pending'}">${a.status || 'pending'}</div>
+          <div class="actions">
+            ${a.status !== "approved" ? `<button data-app="${a.id}" data-to="approved">Approve</button>` : ""}
+            ${a.status !== "rejected" ? `<button class="danger" data-app="${a.id}" data-to="rejected">Reject</button>` : ""}
+            ${a.status === "approved" ? `<button data-app="${a.id}" data-to="paid">Mark paid</button>` : ""}
+          </div>
+        </div>`).join("") : `<div class="empty"><div class="big">📬</div>No applications yet.</div>`}
+    </div>`;
+}
+
+function renderApp() {
+  const rightPanel = state.tab === "deals" ? renderDealsPanel() :
+                     state.tab === "users" ? renderUsersPanel() :
+                     renderAppsPanel();
+  return `
+    <div class="wrap">
+      ${renderBar()}
+      ${renderStats()}
+      <div class="tabs">
+        <button class="admin-tab ${state.tab === 'deals' ? 'on' : ''}" data-tab="deals">Deals</button>
+        <button class="admin-tab ${state.tab === 'users' ? 'on' : ''}" data-tab="users">Creators</button>
+        <button class="admin-tab ${state.tab === 'applications' ? 'on' : ''}" data-tab="applications">Applications</button>
+      </div>
+      <div class="grid">
+        ${state.tab === "deals" ? renderForm() : `<div></div>`}
+        ${rightPanel}
+      </div>
+    </div>`;
+}
+
+function render() {
+  const root = $("#root");
+  if (state.ui === "loading") { root.innerHTML = `<div class="wrap" style="text-align:center;padding-top:120px;color:var(--ink-3)">Loading…</div>`; return; }
+  if (state.ui === "gate") { root.innerHTML = renderGate(); $("#si")?.addEventListener("click", signInWithGoogle); return; }
+  if (state.ui === "denied") { root.innerHTML = renderDenied(); $("#so")?.addEventListener("click", () => auth.signOut()); return; }
+  root.innerHTML = renderApp();
+  bindApp();
+}
+
+function bindApp() {
+  $("#so")?.addEventListener("click", () => auth.signOut());
+  $$(".admin-tab").forEach(t => t.addEventListener("click", () => { state.tab = t.dataset.tab; render(); }));
+
+  // form
+  const f = state.form;
+  const bind = (id, key, xform = v => v) => {
+    const elx = $("#" + id);
+    if (elx) elx.addEventListener("input", e => { f[key] = xform(e.target.value); });
+  };
+  bind("i_brand", "brand");
+  bind("i_title", "title");
+  bind("i_pay", "pay");
+  bind("i_paynote", "payNote");
+  bind("i_desc", "description");
+  bind("i_deadline", "deadline");
+  bind("i_loc", "location");
+  bind("i_img", "image");
+  $("#i_niche")?.addEventListener("click", e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    f.niche = b.dataset.n;
+    $$(".chip", $("#i_niche")).forEach(c => c.classList.toggle('on', c.dataset.n === f.niche));
+  });
+  $("#i_status")?.addEventListener("click", e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    f.status = b.dataset.s;
+    $$(".chip", $("#i_status")).forEach(c => c.classList.toggle('on', c.dataset.s === f.status));
+  });
+  $("#save")?.addEventListener("click", saveDeal);
+  $("#cancelEdit")?.addEventListener("click", () => { state.editing = null; resetForm(); render(); });
+
+  // deal actions
+  $$("[data-edit]").forEach(b => b.addEventListener("click", () => editDeal(b.dataset.edit)));
+  $$("[data-toggle]").forEach(b => b.addEventListener("click", () => toggleDealStatus(b.dataset.toggle, b.dataset.to)));
+  $$("[data-close]").forEach(b => b.addEventListener("click", () => toggleDealStatus(b.dataset.close, "closed")));
+
+  // application actions
+  $$("[data-app]").forEach(b => b.addEventListener("click", () => updateAppStatus(b.dataset.app, b.dataset.to)));
+}
+
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+state.ui = "loading";
+render();
+
+auth.onAuthStateChanged(async (user) => {
+  if (!user) {
+    state.user = null;
+    state.ui = "gate";
+    render();
+    return;
+  }
+  state.user = user;
+  if (!window.FLUENCE.ADMIN_EMAILS.includes(user.email)) {
+    state.ui = "denied";
+    render();
+    return;
+  }
+  state.ui = "app";
+  render();
+  const [deals, users, apps] = await Promise.all([loadDeals(), loadUsers(), loadApplications()]);
+  state.deals = deals;
+  state.users = users;
+  state.applications = apps;
+  render();
+});
+</script>
+</body>
+</html>
