@@ -1,3 +1,7 @@
 https://app.fluence.lol/* /app/:splat 200!
 https://app.fluence.lol /app/index.html 200!
 /app/* /app/:splat 200
+
+https://admin.fluence.lol/* /admin/:splat 200!
+https://admin.fluence.lol /admin/index.html 200!
+/admin/* /admin/:splat 200
