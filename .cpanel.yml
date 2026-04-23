@@ -1,5 +1,6 @@
----
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/flueeejt/public_html/
+    - export DEPLOYPATH=/home/username/public_html/
     - /bin/cp -R * $DEPLOYPATH
+    - export APPPATH=/home/username/app.fluence.lol/
+    - /bin/cp -R app_folder/* $APPPATH
