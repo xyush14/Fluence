@@ -310,21 +310,90 @@ function humanAuthError(code) {
 // blocking of fluence-30036.firebaseapp.com. Popup works on all modern mobile browsers.
 async function signInWithGoogle() {
   state.authError = null;
+  state.ui = "splash";                       // flip to splash so user sees progress
   render();
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
   try {
+    console.log("[fluence] calling signInWithPopup");
     const result = await auth.signInWithPopup(provider);
-    // onAuthStateChanged will handle the rest.
+    console.log("[fluence] signInWithPopup resolved", !!(result && result.user));
     if (!result || !result.user) {
       state.authError = "Sign-in didn't complete. Try again.";
+      state.ui = "gate";
       render();
+      return;
     }
+    // Drive UI directly from the popup result. Some mobile browsers don't fire
+    // onAuthStateChanged reliably after popup on the first load — this guarantees
+    // we make forward progress even if the listener is slow.
+    await bootUserFlow(result.user);
   } catch (e) {
     console.error("[fluence] sign-in error:", e);
-    state.authError = humanAuthError(e.code);
+    state.authError = humanAuthError(e.code) + (e.message ? "  ["+e.message+"]" : "");
+    state.ui = "gate";
     render();
   }
+}
+
+// Shared flow: given a signed-in firebase user, load profile (with timeout) and
+// route to onboard or app. Safe to call from onAuthStateChanged OR from the
+// signInWithPopup result — whichever arrives first wins, the other is a no-op.
+let _bootedUid = null;
+async function bootUserFlow(user) {
+  if (!user) return;
+  if (_bootedUid === user.uid) return;       // already handled
+  _bootedUid = user.uid;
+  state.user = user;
+
+  let profile = null;
+  let firestoreDown = false;
+  try {
+    profile = await loadProfile(user.uid);
+  } catch (e) {
+    console.error("[fluence] loadProfile failed:", e);
+    firestoreDown = true;
+  }
+
+  if (firestoreDown) {
+    _bootedUid = null;
+    try { await auth.signOut(); } catch (_) {}
+    state.user = null;
+    state.authError =
+      "Signed in, but couldn't reach the database. In Firebase console → Firestore Database → Create Database (Start in test mode), then try again.";
+    state.ui = "gate";
+    render();
+    return;
+  }
+
+  if (!profile || !profile.niche) {
+    Object.assign(onboardState, {
+      name: user.displayName || "",
+      city: "Gwalior",
+      niche: "",
+      instagram: "",
+      phone: "",
+      bio: "",
+    });
+    state.ui = "onboard";
+    render();
+    return;
+  }
+
+  state.profile = profile;
+  state.ui = "app";
+  state.tab = "home";
+  render();
+
+  loadDeals().then((deals) => {
+    state.deals = deals;
+    if (state.ui === "app") render();
+  }).catch((e) => console.warn("loadDeals bg:", e));
+
+  loadApplications(user.uid).then((apps) => {
+    state.applications = apps;
+    if (state.ui === "app") render();
+  }).catch((e) => console.warn("loadApplications bg:", e));
 }
 
 async function signOut() {
@@ -428,8 +497,19 @@ function renderSplash() {
         <svg viewBox="0 0 48 48" fill="none"><path d="M24 6 C30 18, 42 22, 38 34 C36 42, 28 44, 24 44 C20 44, 12 42, 10 34 C6 22, 18 18, 24 6 Z" fill="#fff"/><circle cx="24" cy="32" r="4" fill="#FFD7B5"/></svg>
       </div>
       <div class="tag">Loading…</div>
+      <div id="splashEscape" style="opacity:0;transition:opacity .4s;margin-top:28px;text-align:center">
+        <div style="font-size:13px;color:rgba(255,255,255,.85);margin-bottom:10px;line-height:1.5;max-width:280px">Taking longer than expected?</div>
+        <button onclick="location.reload()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.5);color:#fff;padding:10px 20px;border-radius:24px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">Reload the app</button>
+      </div>
     </div>`;
 }
+
+// Reveal the reload escape hatch after 4s on splash. Defensive — this is the
+// last line of defense if everything else hangs.
+setTimeout(() => {
+  const box = document.getElementById("splashEscape");
+  if (box) box.style.opacity = "1";
+}, 4000);
 
 // ════════════════════════════════════════════════════════════
 // UI: SIGN-IN GATE
@@ -898,81 +978,46 @@ auth.getRedirectResult().catch((e) => {
   console.warn("[fluence] stale redirect result:", e);
 });
 
-// Safety net: if we're still stuck on splash 12 seconds after boot, drop to gate
-// with an escape hatch so the user is never trapped.
+// Watchdog #1: on first page load, if onAuthStateChanged hasn't fired within 6s
+// (Firebase is slow or blocked), drop to gate so the user can sign in.
+let _authFired = false;
 setTimeout(() => {
-  if (state.ui === "splash") {
-    console.warn("[fluence] splash watchdog fired — forcing gate");
-    state.authError = "Taking too long. Check your connection and try again.";
+  if (!_authFired && state.ui === "splash") {
+    console.warn("[fluence] auth watchdog fired — forcing gate");
     state.ui = "gate";
     render();
   }
-}, 12000);
+}, 6000);
 
-auth.onAuthStateChanged(async (user) => {
+// Watchdog #2: if we've been on splash for 15s total (e.g., bootUserFlow hung),
+// force-render the gate with an error and a retry.
+setTimeout(() => {
+  if (state.ui === "splash") {
+    console.warn("[fluence] splash watchdog fired — forcing gate");
+    state.authError = "Taking too long. Tap sign-in to try again.";
+    state.ui = "gate";
+    render();
+  }
+}, 15000);
+
+auth.onAuthStateChanged((user) => {
+  _authFired = true;
+  console.log("[fluence] onAuthStateChanged:", user ? user.uid : "null");
   if (!user) {
+    _bootedUid = null;
     state.user = null;
     state.profile = null;
     state.deals = [];
     state.applications = [];
-    state.ui = "gate";
-    render();
+    if (state.ui !== "gate") {
+      state.ui = "gate";
+      render();
+    }
     return;
   }
-  state.user = user;
-
-  let profile = null;
-  let firestoreDown = false;
-  try {
-    profile = await loadProfile(user.uid);
-  } catch (e) {
-    console.error("[fluence] loadProfile failed:", e);
-    firestoreDown = true;
-  }
-
-  if (firestoreDown) {
-    // Firestore is unreachable — sign the user out, surface a clear error.
-    // Most common cause: Cloud Firestore database hasn't been created yet in the
-    // Firebase console (only Auth is enabled).
-    try { await auth.signOut(); } catch (_) {}
-    state.user = null;
-    state.authError =
-      "Couldn't reach the database. In Firebase console → Firestore Database → Create Database (Start in test mode), then try signing in again.";
-    state.ui = "gate";
-    render();
-    return;
-  }
-
-  if (!profile || !profile.niche) {
-    // New user → onboarding
-    Object.assign(onboardState, {
-      name: user.displayName || "",
-      city: "Gwalior",
-      niche: "",
-      instagram: "",
-      phone: "",
-      bio: "",
-    });
-    state.ui = "onboard";
-    render();
-    return;
-  }
-
-  state.profile = profile;
-  state.ui = "app";
-  state.tab = "home";
-  render();
-
-  // Load deals + applications in the background so the app never blocks on them.
-  loadDeals().then((deals) => {
-    state.deals = deals;
-    if (state.ui === "app") render();
-  }).catch((e) => console.warn("loadDeals bg:", e));
-
-  loadApplications(user.uid).then((apps) => {
-    state.applications = apps;
-    if (state.ui === "app") render();
-  }).catch((e) => console.warn("loadApplications bg:", e));
+  // Defer to the shared bootUserFlow — it's idempotent per-uid, so if
+  // signInWithPopup already ran it, this is a no-op.
+  bootUserFlow(user);
 });
 </script>
 </body>
