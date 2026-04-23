@@ -335,34 +335,60 @@ async function signOut() {
 }
 
 // ════════════════════════════════════════════════════════════
-// FIRESTORE
+// FIRESTORE (with hard timeouts so the app never hangs)
 // ════════════════════════════════════════════════════════════
+function withTimeout(promise, ms, label = "firestore") {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label}_timeout`)), ms)),
+  ]);
+}
+
 async function loadProfile(uid) {
-  const snap = await db.collection("users").doc(uid).get();
+  const snap = await withTimeout(db.collection("users").doc(uid).get(), 8000, "loadProfile");
   return snap.exists ? snap.data() : null;
 }
 
 async function saveProfile(uid, data) {
   const payload = { ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-  await db.collection("users").doc(uid).set(payload, { merge: true });
-  await mirror("upsertUser", { uid, ...data });
+  await withTimeout(db.collection("users").doc(uid).set(payload, { merge: true }), 10000, "saveProfile");
+  mirror("upsertUser", { uid, ...data }).catch(() => {});
   return payload;
 }
 
 async function loadDeals(limit = 5) {
   try {
-    const snap = await db.collection("deals").where("status", "==", "live").orderBy("createdAt", "desc").limit(limit).get();
+    const snap = await withTimeout(
+      db.collection("deals").where("status", "==", "live").orderBy("createdAt", "desc").limit(limit).get(),
+      8000, "loadDeals"
+    );
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch (e) {
-    // If index isn't built yet, fall back to simpler query
-    const snap = await db.collection("deals").limit(limit).get();
-    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(d => d.status === "live" || !d.status);
+    console.warn("loadDeals primary query failed:", e.message || e);
+    try {
+      const snap = await withTimeout(db.collection("deals").limit(limit).get(), 8000, "loadDeals2");
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(d => d.status === "live" || !d.status);
+    } catch (e2) { console.warn("loadDeals fallback failed:", e2.message || e2); return []; }
   }
 }
 
 async function loadApplications(uid) {
-  const snap = await db.collection("applications").where("uid", "==", uid).orderBy("createdAt", "desc").limit(30).get();
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  try {
+    const snap = await withTimeout(
+      db.collection("applications").where("uid", "==", uid).orderBy("createdAt", "desc").limit(30).get(),
+      8000, "loadApps"
+    );
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    console.warn("loadApplications failed:", e.message || e);
+    try {
+      const snap = await withTimeout(
+        db.collection("applications").where("uid", "==", uid).limit(30).get(),
+        8000, "loadApps2"
+      );
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e2) { return []; }
+  }
 }
 
 async function applyToDeal(deal) {
@@ -553,13 +579,19 @@ async function submitOnboard() {
     state.profile = { ...profile, createdAt: new Date() };
     state.ui = "app";
     state.tab = "home";
-    state.deals = await loadDeals();
-    state.applications = await loadApplications(uid);
     render();
     toast("Welcome to Fluence!");
+    // Load deals + applications in the background so submit never hangs.
+    loadDeals().then(d => { state.deals = d; if (state.ui === "app") render(); }).catch(() => {});
+    loadApplications(uid).then(a => { state.applications = a; if (state.ui === "app") render(); }).catch(() => {});
   } catch (e) {
-    console.error(e);
-    toast("Something went wrong. Try again.");
+    console.error("saveProfile failed:", e);
+    const msg = String(e && e.message || e);
+    if (msg.includes("timeout")) {
+      toast("Couldn't save — database unreachable. Create Firestore in Firebase console.");
+    } else {
+      toast("Couldn't save profile. Check your connection and try again.");
+    }
     btn.disabled = false;
     btn.innerHTML = "<span>Create my profile</span> <span>→</span>";
   }
@@ -860,11 +892,22 @@ function render() {
 state.ui = "splash";
 render();
 
-// Defensive: if someone has a stale redirect flow from an earlier version, catch any error
+/// Defensive: if someone has a stale redirect flow from an earlier version, catch any error
 // from it instead of letting the promise reject silently.
 auth.getRedirectResult().catch((e) => {
   console.warn("[fluence] stale redirect result:", e);
 });
+
+// Safety net: if we're still stuck on splash 12 seconds after boot, drop to gate
+// with an escape hatch so the user is never trapped.
+setTimeout(() => {
+  if (state.ui === "splash") {
+    console.warn("[fluence] splash watchdog fired — forcing gate");
+    state.authError = "Taking too long. Check your connection and try again.";
+    state.ui = "gate";
+    render();
+  }
+}, 12000);
 
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
@@ -877,35 +920,59 @@ auth.onAuthStateChanged(async (user) => {
     return;
   }
   state.user = user;
+
+  let profile = null;
+  let firestoreDown = false;
   try {
-    const profile = await loadProfile(user.uid);
-    if (!profile || !profile.niche) {
-      // New user → onboarding
-      Object.assign(onboardState, {
-        name: user.displayName || "",
-        city: "Gwalior",
-        niche: "",
-        instagram: "",
-        phone: "",
-        bio: "",
-      });
-      state.ui = "onboard";
-      render();
-      return;
-    }
-    state.profile = profile;
-    state.ui = "app";
-    state.tab = "home";
+    profile = await loadProfile(user.uid);
+  } catch (e) {
+    console.error("[fluence] loadProfile failed:", e);
+    firestoreDown = true;
+  }
+
+  if (firestoreDown) {
+    // Firestore is unreachable — sign the user out, surface a clear error.
+    // Most common cause: Cloud Firestore database hasn't been created yet in the
+    // Firebase console (only Auth is enabled).
+    try { await auth.signOut(); } catch (_) {}
+    state.user = null;
+    state.authError =
+      "Couldn't reach the database. In Firebase console → Firestore Database → Create Database (Start in test mode), then try signing in again.";
+    state.ui = "gate";
     render();
-    // load deals + applications after initial render
-    const [deals, apps] = await Promise.all([loadDeals(), loadApplications(user.uid)]);
+    return;
+  }
+
+  if (!profile || !profile.niche) {
+    // New user → onboarding
+    Object.assign(onboardState, {
+      name: user.displayName || "",
+      city: "Gwalior",
+      niche: "",
+      instagram: "",
+      phone: "",
+      bio: "",
+    });
+    state.ui = "onboard";
+    render();
+    return;
+  }
+
+  state.profile = profile;
+  state.ui = "app";
+  state.tab = "home";
+  render();
+
+  // Load deals + applications in the background so the app never blocks on them.
+  loadDeals().then((deals) => {
     state.deals = deals;
+    if (state.ui === "app") render();
+  }).catch((e) => console.warn("loadDeals bg:", e));
+
+  loadApplications(user.uid).then((apps) => {
     state.applications = apps;
     if (state.ui === "app") render();
-  } catch (e) {
-    console.error("Load error:", e);
-    toast("Couldn't load your profile. Reload?");
-  }
+  }).catch((e) => console.warn("loadApplications bg:", e));
 });
 </script>
 </body>
