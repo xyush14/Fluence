@@ -42,6 +42,8 @@ firebase.initializeApp(window.FLUENCE.FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db = firebase.firestore();
 auth.languageCode = "en";
+// Persist auth across refreshes (handles Safari/iOS where default storage is flaky).
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch((e) => console.warn("auth persistence:", e));
 </script>
 
 <style>
@@ -258,6 +260,7 @@ const state = {
   applications: [],
   tab: "home",
   ui: "splash",      // splash | gate | onboard | app
+  authError: null,   // string — shown on the gate if sign-in failed
 };
 
 // ════════════════════════════════════════════════════════════
@@ -286,40 +289,41 @@ function toast(msg) {
 // ════════════════════════════════════════════════════════════
 // AUTH
 // ════════════════════════════════════════════════════════════
-const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-
 function humanAuthError(code) {
   if (!code) return "Sign-in failed. Please try again.";
   if (code === "auth/unauthorized-domain")
-    return "This domain isn't authorized in Firebase. Ayush needs to add it: Firebase console → Authentication → Settings → Authorized domains.";
+    return "This domain isn't authorized in Firebase. Add fluence.lol, app.fluence.lol and admin.fluence.lol at: Firebase console → Authentication → Settings → Authorized domains.";
   if (code === "auth/popup-blocked")
-    return "Your browser blocked the sign-in popup. Allow popups or try again.";
+    return "Your browser blocked the popup. Allow popups for fluence.lol and try again.";
   if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request")
     return "Sign-in cancelled. Tap the button to try again.";
   if (code === "auth/network-request-failed")
     return "Network error. Check your internet and retry.";
   if (code === "auth/operation-not-allowed")
-    return "Google sign-in isn't enabled in Firebase. Ayush needs to enable it.";
+    return "Google sign-in isn't enabled in Firebase. Enable it in Authentication → Sign-in method → Google.";
+  if (code === "auth/internal-error")
+    return "Firebase internal error. Check that Google sign-in is enabled and this domain is authorized.";
   return "Sign-in failed: " + code;
 }
 
+// Popup-only. Redirect flow silently fails on iOS Safari/Chrome due to third-party cookie
+// blocking of fluence-30036.firebaseapp.com. Popup works on all modern mobile browsers.
 async function signInWithGoogle() {
+  state.authError = null;
+  render();
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
   try {
-    if (isMobile) {
-      // Redirect flow is more reliable on mobile browsers (Safari ITP, popup blockers, etc.)
-      await auth.signInWithRedirect(provider);
-    } else {
-      await auth.signInWithPopup(provider);
+    const result = await auth.signInWithPopup(provider);
+    // onAuthStateChanged will handle the rest.
+    if (!result || !result.user) {
+      state.authError = "Sign-in didn't complete. Try again.";
+      render();
     }
   } catch (e) {
     console.error("[fluence] sign-in error:", e);
-    // If popup fails on desktop, fall back to redirect
-    if (!isMobile && (e.code === "auth/popup-blocked" || e.code === "auth/popup-closed-by-user")) {
-      try { await auth.signInWithRedirect(provider); return; } catch (e2) { e = e2; }
-    }
-    toast(humanAuthError(e.code));
+    state.authError = humanAuthError(e.code);
+    render();
   }
 }
 
@@ -405,6 +409,12 @@ function renderSplash() {
 // UI: SIGN-IN GATE
 // ════════════════════════════════════════════════════════════
 function renderGate() {
+  const err = state.authError
+    ? `<div style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5;border-radius:14px;padding:12px 14px;margin:0 auto 16px;max-width:320px;font-size:13px;line-height:1.4;font-weight:500;text-align:left">
+         <div style="font-weight:700;margin-bottom:4px">Sign-in didn't work</div>
+         ${state.authError}
+       </div>`
+    : "";
   return `
     <div class="gate">
       <div class="mark">
@@ -412,6 +422,7 @@ function renderGate() {
       </div>
       <h1>Get paid to <span class="serif">post</span>.</h1>
       <p>Fluence connects local creators with real brands. Sign in to see live deals in your city.</p>
+      ${err}
       <button class="google-btn" id="signinBtn">
         ${ICONS.google}
         <span>Continue with Google</span>
@@ -849,10 +860,10 @@ function render() {
 state.ui = "splash";
 render();
 
-// Handle the tail end of a redirect-based sign-in. If it failed, show the reason.
+// Defensive: if someone has a stale redirect flow from an earlier version, catch any error
+// from it instead of letting the promise reject silently.
 auth.getRedirectResult().catch((e) => {
-  console.error("[fluence] redirect sign-in error:", e);
-  toast(humanAuthError(e.code));
+  console.warn("[fluence] stale redirect result:", e);
 });
 
 auth.onAuthStateChanged(async (user) => {
